@@ -1,41 +1,52 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  getSavedEventIds, 
-  toggleSaveEvent 
+﻿import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  getSavedEventIds,
+  toggleSaveEvent
 } from '../services/mockEventService';
+import {
+  onAuthChange,
+  signInOrganizer,
+  signOutOrganizer
+} from '../services/authService';
 
 const EventContext = createContext();
 
 export function EventProvider({ children }) {
-  // Navigation / View State (Root URL defaults to map-first homepage per Section 1)
-  const [currentView, setCurrentView] = useState('map'); 
-
-  // Map & Event selection state (Parent owns selectedEventId per Section 5)
+  const [currentView, setCurrentView] = useState('map');
   const [selectedEventId, setSelectedEventId] = useState(null);
-
-  // Modal State for Full Event Details
   const [activeModalEvent, setActiveModalEvent] = useState(null);
-
-  // Client-side saved / bookmarked events (Frontend-only, explicitly not synced with Firebase)
   const [savedEventIds, setSavedEventIds] = useState([]);
-
-  // Toast notification state
-  const [toast, setToast] = useState(null); // { message, type: 'info' | 'success' | 'warning' }
-
-  // Organizer session state for testing V1 organizer dashboard
-  // Default demo organizer identity: 'org-cs-dept' (matches mock events createdBy)
-  const [organizerUser, setOrganizerUser] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [authState, setAuthState] = useState({
+    user: null,
+    profile: null,
+    role: 'guest',
+    permissions: ['events:read:published'],
+    loading: true
+  });
 
   useEffect(() => {
-    // Load local bookmarks
+    const unsubscribe = onAuthChange(setAuthState);
     setSavedEventIds(getSavedEventIds());
+    return unsubscribe;
   }, []);
+
+  const organizerUser =
+    authState.role === 'organizer' && authState.user
+      ? {
+          id: authState.user.uid,
+          email: authState.user.email,
+          name:
+            authState.profile?.displayName ||
+            authState.profile?.department ||
+            authState.user.email ||
+            'Organizer'
+        }
+      : null;
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3500);
+    setTimeout(() => setToast(null), 3500);
   };
 
   const openEventDetails = (event) => {
@@ -43,44 +54,48 @@ export function EventProvider({ children }) {
     setSelectedEventId(event.id);
   };
 
-  const closeEventDetails = () => {
-    setActiveModalEvent(null);
-  };
+  const closeEventDetails = () => setActiveModalEvent(null);
 
   const handleToggleSave = (eventId, eventTitle = 'Event') => {
     const isNowSaved = toggleSaveEvent(eventId);
     setSavedEventIds(getSavedEventIds());
-    if (isNowSaved) {
-      showToast(`Bookmarked "${eventTitle}" locally`, 'success');
-    } else {
-      showToast(`Removed "${eventTitle}" from bookmarks`, 'info');
-    }
+    showToast(
+      isNowSaved
+        ? `Bookmarked "${eventTitle}" locally`
+        : `Removed "${eventTitle}" from bookmarks`,
+      isNowSaved ? 'success' : 'info'
+    );
     return isNowSaved;
   };
 
-  const handleSelectEvent = (eventId) => {
-    setSelectedEventId(eventId);
-  };
+  const handleSelectEvent = (eventId) => setSelectedEventId(eventId);
 
-  const setOrganizerSession = (email) => {
-    setOrganizerUser({ 
-      email, 
-      id: 'org-cs-dept',
-      name: 'Dept. of Computer Science & Engineering'
-    });
-    showToast(`Organizer workspace loaded (V1 Scope)`, 'info');
+  const setOrganizerSession = async (email, password) => {
+    const session = await signInOrganizer(email, password);
+
+    if (session.role !== 'organizer') {
+      await signOutOrganizer();
+      throw new Error('This portal is for organizer accounts only.');
+    }
+
     setCurrentView('organizer-dashboard');
+    showToast('Successfully signed in to Organizer Workspace', 'success');
+    return session;
   };
 
-  const logoutOrganizer = () => {
-    setOrganizerUser(null);
-    showToast(`Signed out of Organizer Workspace`, 'info');
-    setCurrentView('map');
+  const logoutOrganizer = async () => {
+    try {
+      await signOutOrganizer();
+      setCurrentView('map');
+      showToast('Signed out of Organizer Workspace', 'info');
+    } catch (error) {
+      showToast(error.message || 'Unable to sign out.', 'warning');
+    }
   };
 
   const navigateTo = (view, extraState = null) => {
     setCurrentView(view);
-    if (extraState && extraState.selectedEventId) {
+    if (extraState?.selectedEventId) {
       setSelectedEventId(extraState.selectedEventId);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -104,7 +119,8 @@ export function EventProvider({ children }) {
         showToast,
         organizerUser,
         setOrganizerSession,
-        logoutOrganizer
+        logoutOrganizer,
+        authLoading: authState.loading
       }}
     >
       {children}

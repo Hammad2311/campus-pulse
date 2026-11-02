@@ -83,7 +83,7 @@ service cloud.firestore {
         && request.resource.data.benefitsVerificationStatus != "verified"
         && (
           (resource.data.status == "draft"
-            && request.resource.data.status == "draft")
+            && request.resource.data.status in ["draft", "cancelled"])
           ||
           (resource.data.status == "published"
             && request.resource.data.status == "cancelled")

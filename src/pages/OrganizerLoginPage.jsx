@@ -49,12 +49,13 @@ export function OrganizerLoginPage() {
     setErrors({});
     setIsLoading(true);
 
-    // Simulate input validation verification
-    setTimeout(() => {
+    try {
+      await setOrganizerSession(email, password);
+    } catch (error) {
+      setServerError(error.message || 'Authentication failed. Please try again.');
+    } finally {
       setIsLoading(false);
-      // Launch V1 Organizer Dashboard
-      setOrganizerSession(email);
-    }, 500);
+    }
   };
 
   return (
@@ -115,7 +116,7 @@ export function OrganizerLoginPage() {
                 <input
                   type="password"
                   className={`cp-form-input cp-has-icon ${errors.password ? 'error' : ''}`}
-                  placeholder="••••••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -129,7 +130,7 @@ export function OrganizerLoginPage() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <span>Validating credentials...</span>
+                <span>Signing in securely...</span>
               ) : (
                 <>
                   <span>Sign In to Organizer Portal</span>
@@ -142,9 +143,9 @@ export function OrganizerLoginPage() {
           <div className="cp-login-footer">
             <button 
               className="cp-back-home-link"
-              onClick={() => navigateTo('landing')}
+              onClick={() => navigateTo('map')}
             >
-              ← Return to Campus Pulse Home
+              â† Return to Campus Pulse Home
             </button>
           </div>
         </div>

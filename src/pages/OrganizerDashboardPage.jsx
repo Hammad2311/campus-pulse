@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { 
-  getEvents, 
-  createEventDraft, 
-  updateEventDraft, 
-  cancelEvent 
-} from '../services/mockEventService';
+import {
+  getOrganizerEvents,
+  createEvent,
+  updateEvent,
+  cancelEvent
+} from '../services/eventService';
 import { EventFormModal } from '../components/dashboard/EventFormModal';
 import { Badge, CategoryBadge, VerificationBadge } from '../components/common/Badge';
 import { 
@@ -29,7 +29,7 @@ export function OrganizerDashboardPage() {
     showToast 
   } = useEvents();
 
-  const currentOrgId = organizerUser?.id || 'org-cs-dept';
+  const currentOrgId = organizerUser?.id;
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,18 +41,26 @@ export function OrganizerDashboardPage() {
   const [editingEvent, setEditingEvent] = useState(null);
 
   const loadDashboardEvents = async () => {
+    if (!currentOrgId) {
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+
     try {
-      // List OWN events per Section 6
-      const { data, error } = await getEvents({
-        status: 'all',
-        organizerId: currentOrgId
-      });
-      if (!error && data) {
-        setEvents(data);
+      const { data, error } = await getOrganizerEvents(currentOrgId);
+
+      if (error) {
+        showToast(error.message || 'Unable to load your events.', 'warning');
+        setEvents([]);
+      } else {
+        setEvents(data || []);
       }
-    } catch (err) {
-      console.error('Failed to load organizer events', err);
+    } catch (error) {
+      showToast(error.message || 'Unable to load your events.', 'warning');
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -77,37 +85,48 @@ export function OrganizerDashboardPage() {
   };
 
   const handleFormSubmit = async (formData) => {
-    if (editingEvent) {
-      const { data, error } = await updateEventDraft(editingEvent.id, formData, currentOrgId);
+    try {
+      const { error } = editingEvent
+        ? await updateEvent(editingEvent.id, formData)
+        : await createEvent(formData);
+
       if (error) {
-        showToast(error, 'warning');
-      } else {
-        showToast(`Draft updated: "${formData.title}"`, 'success');
+        showToast(error.message || 'Unable to save event draft.', 'warning');
+        return;
       }
-    } else {
-      const { data, error } = await createEventDraft(formData, currentOrgId);
-      if (error) {
-        showToast(error, 'warning');
-      } else {
-        showToast(`Created draft: "${formData.title}"`, 'success');
-      }
+
+      showToast(
+        editingEvent
+          ? `Draft updated: "${formData.title}"`
+          : `Created draft: "${formData.title}"`,
+        'success'
+      );
+
+      await loadDashboardEvents();
+    } catch (error) {
+      showToast(error.message || 'Unable to save event draft.', 'warning');
     }
-    await loadDashboardEvents();
   };
 
   const handleCancel = async (eventId, title) => {
-    const confirmCancel = window.confirm(`Are you sure you want to cancel "${title}"?`);
-    if (!confirmCancel) return;
+    if (!window.confirm(`Are you sure you want to cancel "${title}"?`)) {
+      return;
+    }
 
-    const { data, error } = await cancelEvent(eventId, currentOrgId);
-    if (error) {
-      showToast(error, 'warning');
-    } else {
+    try {
+      const { error } = await cancelEvent(eventId);
+
+      if (error) {
+        showToast(error.message || 'Unable to cancel event.', 'warning');
+        return;
+      }
+
       showToast(`Event cancelled: "${title}"`, 'info');
       await loadDashboardEvents();
+    } catch (error) {
+      showToast(error.message || 'Unable to cancel event.', 'warning');
     }
   };
-
   // Metrics for own events
   const totalEvents = events.length;
   const draftEvents = events.filter(e => e.status === 'draft');
@@ -279,7 +298,7 @@ export function OrganizerDashboardPage() {
                         <td className="cp-table-title-cell">
                           <div className="cp-table-title">{evt.title}</div>
                           <div className="cp-table-type">
-                            {evt.eventType === 'internal' ? '🏛️ Campus Internal' : '🌐 External Event'}
+                            {evt.eventType === 'internal' ? 'ðŸ›ï¸ Campus Internal' : 'ðŸŒ External Event'}
                           </div>
                         </td>
                         <td>

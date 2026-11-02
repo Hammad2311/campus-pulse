@@ -1,4 +1,4 @@
-﻿rules_version = '2';
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -11,109 +11,98 @@ service cloud.firestore {
       return /databases/$(database)/documents/organizers/$(uid);
     }
 
+    function adminPath(uid) {
+      return /databases/$(database)/documents/admins/$(uid);
+    }
+
     function isAdmin() {
       return signedIn()
-        && exists(organizerPath(request.auth.uid))
-        && get(organizerPath(request.auth.uid)).data.role == "admin"
-        && get(organizerPath(request.auth.uid)).data.active == true;
+        && exists(adminPath(request.auth.uid))
+        && get(adminPath(request.auth.uid)).data.active == true;
     }
 
     function isOrganizer() {
       return signedIn()
         && exists(organizerPath(request.auth.uid))
-        && get(organizerPath(request.auth.uid)).data.active == true
-        && get(organizerPath(request.auth.uid)).data.role in ["organizer", "admin"];
+        && get(organizerPath(request.auth.uid)).data.status == "active"
+        && get(organizerPath(request.auth.uid)).data.role == "organizer";
     }
 
     function validEvent() {
       return request.resource.data.keys().hasAll([
-          "title",
-          "description",
-          "category",
-          "interestArea",
-          "eventType",
-          "startDateTime",
-          "endDateTime",
-          "organizer",
-          "registrationRequired",
-          "benefitsVerificationStatus",
-          "status",
-          "createdBy",
-          "createdAt",
-          "updatedAt"
-        ])
-        && request.resource.data.title is string
-        && request.resource.data.description is string
-        && request.resource.data.category in [
-          "guest_lecture",
-          "technical_workshop",
-          "hackathon",
-          "club_activity",
-          "competition",
-          "cultural_program",
-          "sports_event",
-          "seminar",
-          "department_event",
-          "other"
-        ]
-        && request.resource.data.interestArea is list
-        && request.resource.data.eventType in ["internal", "external"]
-        && request.resource.data.startDateTime is timestamp
-        && request.resource.data.endDateTime is timestamp
-        && request.resource.data.organizer is string
-        && request.resource.data.registrationRequired is bool
-        && request.resource.data.benefitsVerificationStatus in [
-          "verified",
-          "unverified",
-          "not_applicable"
-        ]
-        && request.resource.data.status in [
-          "draft",
-          "published",
-          "cancelled",
-          "completed"
-        ]
-        && request.resource.data.createdBy is string
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.updatedAt is timestamp;
+        "title", "description", "category", "interestArea",
+        "eventType", "startDateTime", "endDateTime", "organizer",
+        "registrationRequired", "benefitsVerificationStatus",
+        "status", "createdBy", "createdAt", "updatedAt"
+      ])
+      && request.resource.data.title is string
+      && request.resource.data.description is string
+      && request.resource.data.category in [
+        "guest_lecture", "technical_workshop", "hackathon",
+        "club_activity", "competition", "cultural_program",
+        "sports_event", "seminar", "department_event", "other"
+      ]
+      && request.resource.data.interestArea is list
+      && request.resource.data.eventType in ["internal", "external"]
+      && request.resource.data.startDateTime is timestamp
+      && request.resource.data.endDateTime is timestamp
+      && request.resource.data.organizer is string
+      && request.resource.data.registrationRequired is bool
+      && request.resource.data.benefitsVerificationStatus in [
+        "verified", "unverified", "not_applicable"
+      ]
+      && request.resource.data.status in [
+        "draft", "published", "cancelled", "completed"
+      ]
+      && request.resource.data.createdBy is string
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt is timestamp;
     }
 
     match /events/{eventId} {
+      allow read: if resource.data.status == "published"
+        || isAdmin()
+        || (isOrganizer() && resource.data.createdBy == request.auth.uid);
 
-      // Guests can read published events.
-      allow read: if resource.data.status == "published";
-
-      // Organizers create their own drafts.
       allow create: if isOrganizer()
         && validEvent()
         && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.status == "draft";
+        && request.resource.data.status == "draft"
+        && request.resource.data.benefitsVerificationStatus != "verified";
 
-      // Admins can update events but cannot transfer ownership
-      // or change the original creation timestamp.
       allow update: if isAdmin()
         && validEvent()
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.createdAt == resource.data.createdAt;
 
-      // Organizers may edit only their own drafts.
       allow update: if isOrganizer()
         && resource.data.createdBy == request.auth.uid
-        && resource.data.status == "draft"
-        && request.resource.data.status == "draft"
         && validEvent()
         && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.benefitsVerificationStatus != "verified"
+        && (
+          (resource.data.status == "draft"
+            && request.resource.data.status == "draft")
+          ||
+          (resource.data.status == "published"
+            && request.resource.data.status == "cancelled")
+        );
 
-      // Only admins may delete events.
-      allow delete: if isAdmin();
+      allow delete: if isAdmin()
+        || (isOrganizer()
+          && resource.data.createdBy == request.auth.uid
+          && resource.data.status == "draft");
     }
 
     match /organizers/{uid} {
       allow read: if signedIn()
         && (request.auth.uid == uid || isAdmin());
+      allow write: if false;
+    }
 
-      // Organizer profiles and roles are managed through trusted admin access.
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;
     }
   }

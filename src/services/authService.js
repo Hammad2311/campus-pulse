@@ -5,29 +5,24 @@
 } from "firebase/auth";
 
 import { doc, getDoc } from "firebase/firestore";
-
 import { auth, db } from "../lib/firebase.js";
 
-const ORGANIZERS_COLLECTION = "organizers";
-
-const VALID_ROLES = ["organizer", "admin"];
-
 export async function getOrganizerProfile(uid) {
-  if (!uid) {
-    return null;
-  }
+  if (!uid) return null;
 
-  const profileRef = doc(db, ORGANIZERS_COLLECTION, uid);
-  const profileSnapshot = await getDoc(profileRef);
+  const snapshot = await getDoc(doc(db, "organizers", uid));
+  if (!snapshot.exists()) return null;
 
-  if (!profileSnapshot.exists()) {
-    return null;
-  }
+  return { uid: snapshot.id, ...snapshot.data() };
+}
 
-  return {
-    uid: profileSnapshot.id,
-    ...profileSnapshot.data(),
-  };
+export async function getAdminProfile(uid) {
+  if (!uid) return null;
+
+  const snapshot = await getDoc(doc(db, "admins", uid));
+  if (!snapshot.exists()) return null;
+
+  return { uid: snapshot.id, ...snapshot.data() };
 }
 
 export function getCurrentUser() {
@@ -44,80 +39,100 @@ export async function signInOrganizer(email, password) {
   try {
     const profile = await getOrganizerProfile(credential.user.uid);
 
-    if (
-      !profile ||
-      profile.active !== true ||
-      !VALID_ROLES.includes(profile.role)
-    ) {
-      throw new Error(
-        "This account does not have an active organizer profile."
-      );
+    if (!profile || profile.status !== "active") {
+      throw new Error("Organizer account is missing or disabled.");
     }
 
-    return {
-      user: credential.user,
-      profile,
-    };
+    return { user: credential.user, profile };
   } catch (error) {
     await signOut(auth);
     throw error;
   }
 }
 
-export async function signOutOrganizer() {
-  await signOut(auth);
+export async function signInAdmin(email, password) {
+  const credential = await signInWithEmailAndPassword(
+    auth,
+    email.trim(),
+    password
+  );
+
+  try {
+    const profile = await getAdminProfile(credential.user.uid);
+
+    if (!profile || profile.active !== true) {
+      throw new Error("Admin account is missing or disabled.");
+    }
+
+    return { user: credential.user, profile };
+  } catch (error) {
+    await signOut(auth);
+    throw error;
+  }
+}
+
+export function signOutOrganizer() {
+  return signOut(auth);
 }
 
 export function hasPermission(profile, permission) {
-  if (!profile || profile.active !== true) {
-    return false;
+  if (!profile) return false;
+
+  const organizerPermissions = [
+    "createEvent",
+    "updateOwnEvent",
+    "cancelOwnEvent",
+    "viewOwnEvents",
+    "deleteOwnDraft",
+  ];
+
+  const adminPermissions = [
+    ...organizerPermissions,
+    "publishEvent",
+    "verifyBenefits",
+    "manageAllEvents",
+    "manageOrganizers",
+  ];
+
+  if (profile.role === "organizer" && profile.status === "active") {
+    return organizerPermissions.includes(permission);
   }
 
-  const permissions = {
-    organizer: [
-      "createEvent",
-      "updateOwnEvent",
-      "cancelOwnEvent",
-      "viewOwnEvents",
-    ],
-    admin: [
-      "createEvent",
-      "updateOwnEvent",
-      "cancelOwnEvent",
-      "viewOwnEvents",
-      "publishEvent",
-      "verifyBenefits",
-      "manageAllEvents",
-      "manageOrganizers",
-    ],
-  };
+  if (profile.role === "admin" && profile.active === true) {
+    return adminPermissions.includes(permission);
+  }
 
-  return permissions[profile.role]?.includes(permission) ?? false;
+  return false;
 }
 
 export function onAuthChange(callback) {
   return onAuthStateChanged(auth, async (user) => {
     if (!user) {
-      callback({
-        user: null,
-        profile: null,
-      });
+      callback(null);
       return;
     }
 
     try {
-      const profile = await getOrganizerProfile(user.uid);
+      const adminProfile = await getAdminProfile(user.uid);
 
-      callback({
-        user,
-        profile,
-      });
+      if (adminProfile?.active === true) {
+        callback({ user, profile: { ...adminProfile, role: "admin" } });
+        return;
+      }
+
+      const organizerProfile = await getOrganizerProfile(user.uid);
+
+      if (organizerProfile?.status === "active") {
+        callback({
+          user,
+          profile: { ...organizerProfile, role: "organizer" },
+        });
+        return;
+      }
+
+      callback({ user, profile: null });
     } catch (error) {
-      callback({
-        user,
-        profile: null,
-        error,
-      });
+      callback({ user, profile: null, error });
     }
   });
 }

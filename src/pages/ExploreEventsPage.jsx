@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '../context/EventContext';
-import { getPublishedEvents } from '../services/eventService';
+import { getEvents } from '../services/eventService';
 import { EventFilterBar } from '../components/events/EventFilterBar';
 import { EventCard } from '../components/events/EventCard';
 import { 
@@ -35,7 +35,7 @@ export function ExploreEventsPage() {
         status: 'published'
       });
       if (serviceError) {
-        setError(serviceError);
+        setError(serviceError?.message || 'Unable to load campus events.');
       } else {
         setEvents(data || []);
       }
@@ -153,4 +153,6 @@ export function ExploreEventsPage() {
     </div>
   );
 }
+
+
 

@@ -1,0 +1,194 @@
+.cp-my-events-page {
+  padding: 3rem 0 5rem;
+  min-height: calc(100vh - var(--navbar-height) - 150px);
+}
+
+.cp-my-events-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cp-my-events-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.cp-my-events-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+.cp-my-events-subtitle {
+  font-size: 1rem;
+  color: var(--navy-500);
+  margin-top: 0.25rem;
+  max-width: 650px;
+}
+
+/* Bookmarks Stat Card */
+.cp-bookmarks-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.cp-stat-bookmark-icon {
+  color: var(--primary-600);
+}
+
+.cp-stat-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--navy-500);
+  letter-spacing: 0.04em;
+}
+
+.cp-stat-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+/* Session Notice */
+.cp-session-demo-notice {
+  background: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.15rem;
+  font-size: 0.82rem;
+  color: var(--primary-900);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  line-height: 1.5;
+}
+
+.cp-notice-sparkle {
+  color: var(--primary-600);
+  flex-shrink: 0;
+}
+
+/* Tabs */
+.cp-my-events-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #FFFFFF;
+  padding: 0.35rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-xs);
+  overflow-x: auto;
+}
+
+.cp-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--navy-600);
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.cp-tab-btn:hover {
+  color: var(--navy-900);
+  background: var(--navy-50);
+}
+
+.cp-tab-btn.active {
+  background: var(--primary-600);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.cp-tab-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.08);
+  color: inherit;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.cp-tab-btn.active .cp-tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+
+/* Grid & Empty State */
+.cp-my-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.75rem;
+}
+
+.cp-my-events-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4.5rem 2rem;
+  background: #FFFFFF;
+  gap: 1rem;
+}
+
+.cp-empty-tab-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--navy-50);
+  color: var(--navy-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-empty-tab-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.cp-empty-tab-desc {
+  font-size: 0.95rem;
+  color: var(--navy-500);
+  max-width: 500px;
+  line-height: 1.55;
+}
+
+.cp-empty-explore-btn {
+  margin-top: 0.5rem;
+}
+
+.cp-my-events-loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--navy-500);
+}
+
+@media (max-width: 640px) {
+  .cp-my-events-title {
+    font-size: 1.85rem;
+  }
+}

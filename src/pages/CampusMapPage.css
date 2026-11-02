@@ -1,0 +1,137 @@
+.cp-map-homepage-root {
+  width: 100%;
+  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Floating Controls Bar over Map */
+.cp-map-floating-controls {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 90%;
+  width: 720px;
+  pointer-events: auto;
+}
+
+.cp-floating-search-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 0.5rem 1rem;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  transition: all var(--transition-fast);
+}
+
+.cp-floating-search-bar:focus-within {
+  border-color: var(--primary-500);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+  background: #FFFFFF;
+}
+
+.cp-floating-search-icon {
+  color: var(--navy-400);
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.cp-floating-search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.88rem;
+  color: var(--navy-900);
+  outline: none;
+}
+
+.cp-floating-search-clear {
+  color: var(--navy-400);
+  padding: 0.2rem;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+}
+
+.cp-floating-search-clear:hover {
+  color: var(--navy-700);
+  background: var(--navy-100);
+}
+
+/* Floating Category Scroll */
+.cp-floating-category-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 0.2rem 0.5rem;
+  scrollbar-width: none;
+}
+
+.cp-floating-category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cp-floating-cat-chip {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy-700);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-fast);
+}
+
+.cp-floating-cat-chip:hover {
+  background: #FFFFFF;
+  border-color: var(--primary-300);
+  color: var(--primary-700);
+}
+
+.cp-floating-cat-chip.active {
+  background: var(--primary-600);
+  color: #FFFFFF;
+  border-color: var(--primary-600);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+/* Full Viewport Map Stage */
+.cp-map-stage-container {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cp-map-floating-controls {
+    width: 95%;
+    top: 0.75rem;
+  }
+
+  .cp-floating-search-bar {
+    padding: 0.4rem 0.85rem;
+  }
+}

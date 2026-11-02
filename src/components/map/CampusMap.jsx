@@ -12,7 +12,7 @@ const CAMPUS_VENUES = [
   { id: 'learning-centre-2', name: 'Learning Centre 2', x: 21.22, y: 56.74 },
   { id: 'library', name: 'Library', x: 39.45, y: 24.12 },
   { id: 'volleyball-ground', name: 'Volleyball Ground', x: 27.41, y: 27.25 },
-  { id: 'alfresco', name: 'Al Fresco (Event Space)', x: 28.13, y: 42.28 },
+  { id: 'alfresco', name: 'Alfresco (Event Space)', x: 28.13, y: 42.28 },
   { id: 'central-green', name: 'Central Green', x: 39.97, y: 41.21 },
   { id: 'academic-block', name: 'Academic Block', x: 45.70, y: 21.39 },
   { id: 'food-court', name: 'Food Court', x: 25.07, y: 70.80 },

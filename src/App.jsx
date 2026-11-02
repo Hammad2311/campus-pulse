@@ -6,9 +6,8 @@ import { Toast } from './components/common/Toast';
 import { EventDetailsModal } from './components/events/EventDetailsModal';
 
 // Pages
-import { LandingPage } from './pages/LandingPage';
-import { ExploreEventsPage } from './pages/ExploreEventsPage';
 import { CampusMapPage } from './pages/CampusMapPage';
+import { ExploreEventsPage } from './pages/ExploreEventsPage';
 import { ExternalEventsPage } from './pages/ExternalEventsPage';
 import { MyEventsPage } from './pages/MyEventsPage';
 import { OrganizerDashboardPage } from './pages/OrganizerDashboardPage';
@@ -17,12 +16,12 @@ import { OrganizerLoginPage } from './pages/OrganizerLoginPage';
 function AppContent() {
   const { currentView } = useEvents();
 
+  const isMapHomepage = currentView === 'map';
+
   const renderCurrentView = () => {
     switch (currentView) {
       case 'explore':
         return <ExploreEventsPage />;
-      case 'map':
-        return <CampusMapPage />;
       case 'external':
         return <ExternalEventsPage />;
       case 'my-events':
@@ -31,21 +30,24 @@ function AppContent() {
         return <OrganizerDashboardPage />;
       case 'organizer-login':
         return <OrganizerLoginPage />;
-      case 'landing':
+      case 'map':
       default:
-        return <LandingPage />;
+        // Root homepage is the interactive campus map
+        return <CampusMapPage />;
     }
   };
 
   return (
-    <div className="cp-app-root">
+    <div className={`cp-app-root ${isMapHomepage ? 'cp-root-map-homepage' : ''}`}>
       <Navbar />
-      <main className="cp-main-content">
+      <main className={`cp-main-content ${isMapHomepage ? 'cp-main-map-homepage' : ''}`}>
         {renderCurrentView()}
       </main>
-      <Footer />
       
-      {/* Global Event Details Modal */}
+      {/* Promotional footer omitted on map homepage per Section 2 */}
+      {!isMapHomepage && <Footer />}
+      
+      {/* Global Event Details Modal (Opens on marker click per Section 4 & 6) */}
       <EventDetailsModal />
 
       {/* Global Toast Notification */}

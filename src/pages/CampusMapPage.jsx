@@ -2,39 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
 import { getEvents } from '../services/mockEventService';
 import { CampusMap } from '../components/map/CampusMap';
-import { CategoryBadge, EventTypeBadge } from '../components/common/Badge';
-import { 
-  APPROVED_CATEGORIES, 
-  CATEGORY_LABELS 
-} from '../data/mockEvents';
-import { 
-  MapPin, 
-  List, 
-  Map as MapIcon, 
-  Calendar, 
-  ArrowRight, 
-  Bookmark, 
-  Search,
-  Award
-} from 'lucide-react';
+import { APPROVED_CATEGORIES, CATEGORY_LABELS } from '../data/mockEvents';
+import { Search, X, MapPin } from 'lucide-react';
 import './CampusMapPage.css';
 
 export function CampusMapPage() {
   const { 
     selectedEventId, 
     handleSelectEvent, 
-    openEventDetails, 
-    savedEventIds, 
-    handleToggleSave 
+    openEventDetails 
   } = useEvents();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  
-  // Mobile View Toggle: 'map' or 'list'
-  const [mobileActiveTab, setMobileActiveTab] = useState('map');
 
   useEffect(() => {
     async function loadMapEvents() {
@@ -43,10 +25,6 @@ export function CampusMapPage() {
         const { data, error } = await getEvents({ status: 'published' });
         if (!error && data) {
           setEvents(data);
-          // Default selectedEventId if none set yet
-          if (!selectedEventId && data.length > 0) {
-            handleSelectEvent(data[0].id);
-          }
         }
       } catch (err) {
         console.error('Error loading map events', err);
@@ -66,176 +44,70 @@ export function CampusMapPage() {
     return matchesCat && matchesSearch;
   });
 
-  return (
-    <div className="cp-map-page">
-      <div className="container cp-map-page-container">
-        {/* Header Bar */}
-        <div className="cp-map-header">
-          <div>
-            <div className="cp-page-tag">
-              <MapPin size={15} />
-              <span>Spatial Campus Geolocation</span>
-            </div>
-            <h1 className="cp-map-title">Interactive Campus Map</h1>
-            <p className="cp-map-subtitle">
-              Explore university event venues, academic halls, and labs. Click any event card to synchronize with the map integration boundary.
-            </p>
-          </div>
+  // Clicking an event marker synchronizes selection and immediately opens Event Details
+  const handleMarkerSelect = (eventId) => {
+    handleSelectEvent(eventId);
+    const targetEvent = events.find(e => e.id === eventId);
+    if (targetEvent) {
+      openEventDetails(targetEvent);
+    }
+  };
 
-          {/* Mobile View Toggle Bar */}
-          <div className="cp-mobile-view-toggle">
-            <button
-              className={`cp-mobile-tab-btn ${mobileActiveTab === 'map' ? 'active' : ''}`}
-              onClick={() => setMobileActiveTab('map')}
+  return (
+    <div className="cp-map-homepage-root">
+      {/* Sleek Floating Filter Overlay on Map */}
+      <div className="cp-map-floating-controls">
+        <div className="cp-floating-search-bar">
+          <Search size={16} className="cp-floating-search-icon" />
+          <input
+            type="text"
+            placeholder="Search campus venues or events..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="cp-floating-search-input"
+          />
+          {searchFilter && (
+            <button 
+              className="cp-floating-search-clear"
+              onClick={() => setSearchFilter('')}
+              aria-label="Clear search"
             >
-              <MapIcon size={16} />
-              <span>Map View</span>
+              <X size={14} />
             </button>
-            <button
-              className={`cp-mobile-tab-btn ${mobileActiveTab === 'list' ? 'active' : ''}`}
-              onClick={() => setMobileActiveTab('list')}
-            >
-              <List size={16} />
-              <span>Events List ({visibleEvents.length})</span>
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* Quick Filter Bar */}
-        <div className="cp-map-filter-strip">
-          <div className="cp-map-search-wrap">
-            <Search size={16} className="cp-map-search-icon" />
-            <input
-              type="text"
-              placeholder="Filter venues or titles..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="cp-map-search-input"
-            />
-          </div>
-
-          <div className="cp-map-category-tabs">
-            <button
-              className={`cp-map-cat-pill ${selectedCategory === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('all')}
-            >
-              All Categories
-            </button>
-            {APPROVED_CATEGORIES.map(catKey => (
+        {/* Floating Category Pills */}
+        <div className="cp-floating-category-scroll">
+          <button
+            className={`cp-floating-cat-chip ${selectedCategory === 'all' ? 'active' : ''}`}
+            onClick={() => setSelectedCategory('all')}
+          >
+            All Events ({events.length})
+          </button>
+          {APPROVED_CATEGORIES.map(catKey => {
+            const count = events.filter(e => e.category === catKey).length;
+            if (count === 0) return null; // Show only active categories for a distraction-free map
+            return (
               <button
                 key={catKey}
-                className={`cp-map-cat-pill ${selectedCategory === catKey ? 'active' : ''}`}
+                className={`cp-floating-cat-chip ${selectedCategory === catKey ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(catKey)}
               >
-                {CATEGORY_LABELS[catKey]}
+                {CATEGORY_LABELS[catKey]} ({count})
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Main Split Grid: Map Canvas (Left/Top) and Event Directory (Right/Bottom) */}
-        <div className="cp-map-split-layout">
-          {/* Map Column (Chandrashekhar Google Maps integration boundary) */}
-          <div className={`cp-map-col ${mobileActiveTab === 'map' ? 'mobile-visible' : 'mobile-hidden'}`}>
-            <CampusMap
-              events={visibleEvents}
-              selectedEventId={selectedEventId}
-              onSelectEvent={handleSelectEvent}
-            />
-          </div>
-
-          {/* Event List Column (Frontend owns cards & synchronization) */}
-          <div className={`cp-list-col ${mobileActiveTab === 'list' ? 'mobile-visible' : 'mobile-hidden'}`}>
-            <div className="cp-list-header">
-              <div className="cp-list-count">
-                <span>Locations</span>
-                <strong>{visibleEvents.length} Active Venues</strong>
-              </div>
-              <span className="cp-selection-hint">Click card to highlight marker</span>
-            </div>
-
-            <div className="cp-sidebar-events-scroll">
-              {loading ? (
-                <div className="cp-sidebar-loading">Loading campus events...</div>
-              ) : visibleEvents.length === 0 ? (
-                <div className="cp-sidebar-empty">
-                  <MapPin size={28} className="cp-empty-pin" />
-                  <p>No campus events match your search.</p>
-                </div>
-              ) : (
-                visibleEvents.map((evt, idx) => {
-                  const isSelected = evt.id === selectedEventId;
-                  const isSaved = savedEventIds.includes(evt.id);
-
-                  const dateFormatted = evt.startDateTime instanceof Date 
-                    ? evt.startDateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    : '';
-
-                  return (
-                    <div
-                      key={evt.id}
-                      className={`card cp-map-event-item ${isSelected ? 'selected' : ''}`}
-                      onClick={() => handleSelectEvent(evt.id)}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <div className="cp-item-top">
-                        <div className="cp-item-index-badge">{idx + 1}</div>
-                        <div className="cp-item-badges">
-                          <CategoryBadge category={evt.category} size="xs" />
-                          <EventTypeBadge type={evt.eventType} size="xs" />
-                        </div>
-                        <button
-                          className={`cp-item-bookmark ${isSaved ? 'saved' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleSave(evt.id, evt.title);
-                          }}
-                          aria-label="Bookmark event"
-                        >
-                          <Bookmark size={14} fill={isSaved ? "#6366F1" : "none"} />
-                        </button>
-                      </div>
-
-                      <h4 className="cp-item-title">{evt.title}</h4>
-
-                      <div className="cp-item-venue-row">
-                        <MapPin size={13} className="cp-venue-icon" />
-                        <span className="cp-item-venue">{evt.venueName}</span>
-                      </div>
-
-                      <div className="cp-item-meta-row">
-                        <div className="cp-item-date">
-                          <Calendar size={13} />
-                          <span>{dateFormatted}</span>
-                        </div>
-                        {evt.activityPoints !== null && evt.activityPoints > 0 && (
-                          <div className="cp-item-pts">
-                            <Award size={12} />
-                            <span>+{evt.activityPoints} Pts</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="cp-item-actions">
-                        <button
-                          className="btn btn-sm btn-ghost cp-item-detail-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEventDetails(evt);
-                          }}
-                        >
-                          <span>Full Details</span>
-                          <ArrowRight size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Dominant Full-Viewport Map Component */}
+      <div className="cp-map-stage-container">
+        <CampusMap
+          events={visibleEvents}
+          selectedEventId={selectedEventId}
+          onSelectEvent={handleMarkerSelect}
+        />
       </div>
     </div>
   );

@@ -11,7 +11,13 @@
 
 The Campus Pulse frontend has been reviewed and aligned with **Hammad's Technical Contract V1**:
 
-1. **Service File Conflict Resolved:**
+1. **Map-First Homepage Architecture:**
+   - The root URL (`/`) immediately launches the interactive campus map as the primary homepage.
+   - All promotional sections (large hero, marketing banners, why sections, stat cards, and promotional footer) have been removed from the homepage.
+   - The map occupies the complete viewport (`calc(100vh - 56px)`).
+   - Selecting any venue marker synchronizes `selectedEventId` and opens the event details modal immediately.
+   - A floating glassmorphism filter pill over the map allows filtering without side panels.
+2. **Service File Conflict Resolved:**
    - The mock implementation is located exclusively at [`src/services/mockEventService.js`](file:///c:/Users/sriva/OneDrive/Desktop/GDG%20DevCampus/src/services/mockEventService.js).
    - The filename `src/services/eventService.js` is preserved and reserved exclusively for Hammad's Cloud Firestore service.
    - All service functions adhere to the approved result format: `{ data, error }`.

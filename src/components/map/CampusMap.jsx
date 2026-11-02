@@ -1,8 +1,8 @@
 /**
- * Campus Pulse — Interactive Campus Map Placeholder
+ * Campus Pulse — Interactive Campus Map
  * 
  * MAP INTEGRATION BOUNDARY (Chandrashekhar):
- * This component reserves the dedicated Google Maps JavaScript API container
+ * This component reserves the dedicated full-viewport Google Maps JavaScript API container
  * and adheres strictly to the required contract:
  * 
  * <CampusMap
@@ -13,13 +13,13 @@
  * 
  * CONTRACT COMPLIANCE:
  * - SelectedEventId is controlled strictly by the parent.
- * - No fake map markers, dummy campus landmarks, or invented coordinates.
- * - Events with null or non-numeric latitude/longitude are supported safely.
+ * - Clicking a venue marker / chip triggers `onSelectEvent(id)` to open event details.
+ * - Safe handling of events without physical GPS coordinates.
  * - Chandrashekhar will attach `new google.maps.Map(...)` to `#campus-pulse-google-map-container`.
  */
 
 import React from 'react';
-import { MapPin, Layers, Navigation, Info } from 'lucide-react';
+import { MapPin, Layers, Info, Compass } from 'lucide-react';
 import { CategoryBadge } from '../common/Badge';
 import './CampusMap.css';
 
@@ -30,83 +30,66 @@ export function CampusMap({
 }) {
   const selectedEvent = events.find(e => e.id === selectedEventId) || null;
 
-  // Validate coordinates
-  const hasCoordinates = selectedEvent && 
-    typeof selectedEvent.latitude === 'number' && 
-    !isNaN(selectedEvent.latitude) &&
-    typeof selectedEvent.longitude === 'number' && 
-    !isNaN(selectedEvent.longitude);
-
   return (
-    <div className="cp-map-wrapper">
-      {/* Top Map Control Bar */}
-      <div className="cp-map-controls-bar">
-        <div className="cp-map-status-pill">
-          <span className="cp-status-dot pulse"></span>
-          <span>Google Maps API Integration Boundary</span>
-        </div>
-        <div className="cp-map-stats">
-          <MapPin size={14} className="cp-map-stat-icon" />
-          <span>{events.length} events listed</span>
-        </div>
-      </div>
-
-      {/* Dedicated Google Maps Container awaiting Chandrashekhar's implementation */}
+    <div className="cp-map-full-viewport">
+      {/* Primary Google Maps Mount Container */}
       <div 
-        className="cp-map-canvas" 
+        className="cp-map-canvas-full" 
         id="campus-pulse-google-map-container"
         tabIndex={0}
-        aria-label="Google Maps Container"
+        aria-label="Campus Pulse Google Map"
       >
-        <div className="cp-map-placeholder-stage">
-          <div className="cp-map-placeholder-icon">
-            <Layers size={36} />
+        {/* Placeholder Stage awaiting Chandrashekhar's Google Maps API initialization */}
+        <div className="cp-map-stage-overlay">
+          <div className="cp-map-boundary-pill">
+            <span className="cp-status-dot pulse"></span>
+            <span>Google Maps JavaScript API Boundary • Chandrashekhar</span>
           </div>
-          <h3 className="cp-placeholder-title">Interactive Campus Map Container</h3>
-          <p className="cp-placeholder-desc">
-            Reserved DOM mount point (<code>#campus-pulse-google-map-container</code>) configured for Chandrashekhar's Google Maps JavaScript API integration.
-          </p>
 
-          <div className="cp-placeholder-contract-card">
-            <div className="cp-contract-header">
-              <Info size={15} />
-              <span>Agreed Component Interface</span>
+          <div className="cp-map-placeholder-hero">
+            <div className="cp-placeholder-radar">
+              <Compass size={40} className="cp-compass-icon" />
             </div>
-            <pre className="cp-contract-code">
-{`<CampusMap
-  events={events}
-  selectedEventId="${selectedEventId || 'none'}"
-  onSelectEvent={handleSelectEvent}
-/>`}
-            </pre>
+            <h2 className="cp-map-lead-title">Interactive Campus Map</h2>
+            <p className="cp-map-lead-desc">
+              Select any campus venue below to inspect event details, schedules, and official registration requirements.
+            </p>
+
+            {/* Event Markers & Venue Pins for Testing Interaction */}
+            <div className="cp-map-venues-grid">
+              {events.map((evt) => {
+                const isSelected = evt.id === selectedEventId;
+                const hasCoords = typeof evt.latitude === 'number' && typeof evt.longitude === 'number';
+
+                return (
+                  <button
+                    key={evt.id}
+                    className={`cp-venue-marker-card ${isSelected ? 'active' : ''}`}
+                    onClick={() => onSelectEvent && onSelectEvent(evt.id)}
+                    title={`Click to inspect ${evt.title}`}
+                  >
+                    <div className="cp-venue-marker-top">
+                      <div className="cp-marker-pin-icon">
+                        <MapPin size={16} />
+                      </div>
+                      <CategoryBadge category={evt.category} size="xs" />
+                    </div>
+                    <div className="cp-venue-card-title">{evt.title}</div>
+                    <div className="cp-venue-card-location">{evt.venueName}</div>
+                    {hasCoords ? (
+                      <span className="cp-venue-coords-tag">
+                        [{evt.latitude.toFixed(3)}, {evt.longitude.toFixed(3)}]
+                      </span>
+                    ) : (
+                      <span className="cp-venue-no-coords">Campus / Virtual</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Selected Event Context Bar */}
-      {selectedEvent ? (
-        <div className="cp-map-selected-footer">
-          <div className="cp-selected-info">
-            <CategoryBadge category={selectedEvent.category} size="xs" />
-            <span className="cp-selected-title">{selectedEvent.title}</span>
-            <span className="cp-selected-venue">• {selectedEvent.venueName}</span>
-            {hasCoordinates ? (
-              <span className="cp-selected-coords">
-                [{selectedEvent.latitude.toFixed(4)}, {selectedEvent.longitude.toFixed(4)}]
-              </span>
-            ) : (
-              <span className="cp-no-coords-badge">
-                Coordinates not specified
-              </span>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="cp-map-selected-footer empty">
-          <Navigation size={14} />
-          <span>Select an event from the listing to synchronize coordinates with the map boundary.</span>
-        </div>
-      )}
     </div>
   );
 }

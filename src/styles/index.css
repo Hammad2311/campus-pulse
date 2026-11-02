@@ -171,6 +171,23 @@ img {
   animation: fadeIn 0.3s ease-out forwards;
 }
 
+/* Map Homepage Full-Viewport Layout */
+.cp-root-map-homepage {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-main-map-homepage {
+  flex: 1;
+  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
+  overflow: hidden;
+  position: relative;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

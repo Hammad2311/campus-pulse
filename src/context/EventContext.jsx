@@ -7,8 +7,8 @@ import {
 const EventContext = createContext();
 
 export function EventProvider({ children }) {
-  // Navigation / View State
-  const [currentView, setCurrentView] = useState('landing'); 
+  // Navigation / View State (Root URL defaults to map-first homepage per Section 1)
+  const [currentView, setCurrentView] = useState('map'); 
 
   // Map & Event selection state (Parent owns selectedEventId per Section 5)
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -75,7 +75,7 @@ export function EventProvider({ children }) {
   const logoutOrganizer = () => {
     setOrganizerUser(null);
     showToast(`Signed out of Organizer Workspace`, 'info');
-    setCurrentView('landing');
+    setCurrentView('map');
   };
 
   const navigateTo = (view, extraState = null) => {

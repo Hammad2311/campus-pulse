@@ -1,0 +1,120 @@
+﻿rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function organizerPath(uid) {
+      return /databases/$(database)/documents/organizers/$(uid);
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(organizerPath(request.auth.uid))
+        && get(organizerPath(request.auth.uid)).data.role == "admin"
+        && get(organizerPath(request.auth.uid)).data.active == true;
+    }
+
+    function isOrganizer() {
+      return signedIn()
+        && exists(organizerPath(request.auth.uid))
+        && get(organizerPath(request.auth.uid)).data.active == true
+        && get(organizerPath(request.auth.uid)).data.role in ["organizer", "admin"];
+    }
+
+    function validEvent() {
+      return request.resource.data.keys().hasAll([
+          "title",
+          "description",
+          "category",
+          "interestArea",
+          "eventType",
+          "startDateTime",
+          "endDateTime",
+          "organizer",
+          "registrationRequired",
+          "benefitsVerificationStatus",
+          "status",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.title is string
+        && request.resource.data.description is string
+        && request.resource.data.category in [
+          "guest_lecture",
+          "technical_workshop",
+          "hackathon",
+          "club_activity",
+          "competition",
+          "cultural_program",
+          "sports_event",
+          "seminar",
+          "department_event",
+          "other"
+        ]
+        && request.resource.data.interestArea is list
+        && request.resource.data.eventType in ["internal", "external"]
+        && request.resource.data.startDateTime is timestamp
+        && request.resource.data.endDateTime is timestamp
+        && request.resource.data.organizer is string
+        && request.resource.data.registrationRequired is bool
+        && request.resource.data.benefitsVerificationStatus in [
+          "verified",
+          "unverified",
+          "not_applicable"
+        ]
+        && request.resource.data.status in [
+          "draft",
+          "published",
+          "cancelled",
+          "completed"
+        ]
+        && request.resource.data.createdBy is string
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+    }
+
+    match /events/{eventId} {
+
+      // Guests can read published events.
+      allow read: if resource.data.status == "published";
+
+      // Organizers create their own drafts.
+      allow create: if isOrganizer()
+        && validEvent()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "draft";
+
+      // Admins can update events but cannot transfer ownership
+      // or change the original creation timestamp.
+      allow update: if isAdmin()
+        && validEvent()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      // Organizers may edit only their own drafts.
+      allow update: if isOrganizer()
+        && resource.data.createdBy == request.auth.uid
+        && resource.data.status == "draft"
+        && request.resource.data.status == "draft"
+        && validEvent()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      // Only admins may delete events.
+      allow delete: if isAdmin();
+    }
+
+    match /organizers/{uid} {
+      allow read: if signedIn()
+        && (request.auth.uid == uid || isAdmin());
+
+      // Organizer profiles and roles are managed through trusted admin access.
+      allow write: if false;
+    }
+  }
+}

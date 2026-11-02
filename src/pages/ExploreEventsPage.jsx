@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '../context/EventContext';
-import { getEvents } from '../services/mockEventService';
+import { getPublishedEvents } from '../services/eventService';
 import { EventFilterBar } from '../components/events/EventFilterBar';
 import { EventCard } from '../components/events/EventCard';
 import { 
@@ -153,3 +153,4 @@ export function ExploreEventsPage() {
     </div>
   );
 }
+

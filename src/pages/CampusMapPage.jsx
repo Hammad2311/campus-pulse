@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { getEvents } from '../services/mockEventService';
+import { getPublishedEvents } from '../services/eventService';
 import { CampusMap } from '../components/map/CampusMap';
 import { APPROVED_CATEGORIES, CATEGORY_LABELS } from '../data/mockEvents';
-import { Search, X, MapPin } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import './CampusMapPage.css';
 
 export function CampusMapPage() {
-  const { 
-    selectedEventId, 
-    handleSelectEvent, 
-    openEventDetails 
-  } = useEvents();
+  const { selectedEventId, handleSelectEvent, openEventDetails } = useEvents();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,43 +15,46 @@ export function CampusMapPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
+    let active = true;
+
     async function loadMapEvents() {
       setLoading(true);
-      try {
-        const { data, error } = await getEvents({ status: 'published' });
-        if (!error && data) {
-          setEvents(data);
-        }
-      } catch (err) {
-        console.error('Error loading map events', err);
-      } finally {
-        setLoading(false);
+      const { data, error } = await getPublishedEvents();
+
+      if (!active) return;
+
+      if (error) {
+        console.error('Firestore events error:', error);
+      } else {
+        setEvents(data || []);
       }
+
+      setLoading(false);
     }
+
     loadMapEvents();
+    return () => { active = false; };
   }, []);
 
-  // Filter events displayed on map
   const visibleEvents = events.filter(e => {
     const matchesCat = selectedCategory === 'all' || e.category === selectedCategory;
-    const matchesSearch = !searchFilter || 
-      e.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      (e.venueName && e.venueName.toLowerCase().includes(searchFilter.toLowerCase()));
+    const search = searchFilter.toLowerCase();
+
+    const matchesSearch = !search ||
+      (e.title || '').toLowerCase().includes(search) ||
+      (e.venueName || '').toLowerCase().includes(search);
+
     return matchesCat && matchesSearch;
   });
 
-  // Clicking an event marker synchronizes selection and immediately opens Event Details
   const handleMarkerSelect = (eventId) => {
     handleSelectEvent(eventId);
-    const targetEvent = events.find(e => e.id === eventId);
-    if (targetEvent) {
-      openEventDetails(targetEvent);
-    }
+    const event = events.find(e => e.id === eventId);
+    if (event) openEventDetails(event);
   };
 
   return (
     <div className="cp-map-homepage-root">
-      {/* Sleek Floating Filter Overlay on Map */}
       <div className="cp-map-floating-controls">
         <div className="cp-floating-search-bar">
           <Search size={16} className="cp-floating-search-icon" />
@@ -63,11 +62,11 @@ export function CampusMapPage() {
             type="text"
             placeholder="Search campus venues or events..."
             value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
+            onChange={e => setSearchFilter(e.target.value)}
             className="cp-floating-search-input"
           />
           {searchFilter && (
-            <button 
+            <button
               className="cp-floating-search-clear"
               onClick={() => setSearchFilter('')}
               aria-label="Clear search"
@@ -77,7 +76,6 @@ export function CampusMapPage() {
           )}
         </div>
 
-        {/* Floating Category Pills */}
         <div className="cp-floating-category-scroll">
           <button
             className={`cp-floating-cat-chip ${selectedCategory === 'all' ? 'active' : ''}`}
@@ -85,29 +83,45 @@ export function CampusMapPage() {
           >
             All Events ({events.length})
           </button>
-          {APPROVED_CATEGORIES.map(catKey => {
-            const count = events.filter(e => e.category === catKey).length;
-            if (count === 0) return null; // Show only active categories for a distraction-free map
+
+          {APPROVED_CATEGORIES.map(cat => {
+            const count = events.filter(e => e.category === cat).length;
+            if (!count) return null;
+
             return (
               <button
-                key={catKey}
-                className={`cp-floating-cat-chip ${selectedCategory === catKey ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(catKey)}
+                key={cat}
+                className={`cp-floating-cat-chip ${selectedCategory === cat ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat)}
               >
-                {CATEGORY_LABELS[catKey]} ({count})
+                {CATEGORY_LABELS[cat]} ({count})
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Dominant Full-Viewport Map Component */}
       <div className="cp-map-stage-container">
         <CampusMap
           events={visibleEvents}
           selectedEventId={selectedEventId}
           onSelectEvent={handleMarkerSelect}
         />
+        {loading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'white',
+            padding: '12px 20px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px #0002',
+            zIndex: 10
+          }}>
+            Loading campus events...
+          </div>
+        )}
       </div>
     </div>
   );

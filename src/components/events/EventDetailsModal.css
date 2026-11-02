@@ -1,0 +1,462 @@
+.cp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.cp-modal-dialog {
+  background: #FFFFFF;
+  border-radius: var(--radius-xl);
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: modalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.cp-modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.cp-modal-close-btn:hover {
+  background: rgba(15, 23, 42, 0.9);
+  transform: scale(1.08);
+}
+
+/* Modal Banner */
+.cp-modal-banner-wrap {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background: var(--navy-900);
+  overflow: hidden;
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+}
+
+.cp-modal-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cp-modal-banner-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.4) 60%, rgba(15, 23, 42, 0.2) 100%);
+}
+
+.cp-modal-banner-content {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.75rem;
+  right: 1.75rem;
+  z-index: 2;
+}
+
+.cp-modal-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.cp-modal-title {
+  color: #FFFFFF;
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal Body */
+.cp-modal-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+  padding: 2rem 1.75rem 2.5rem;
+}
+
+.cp-modal-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Quick Details Grid */
+.cp-modal-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.cp-modal-meta-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-surface-soft);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.cp-modal-meta-icon {
+  color: var(--primary-600);
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.cp-meta-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--navy-500);
+  letter-spacing: 0.04em;
+}
+
+.cp-meta-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--navy-800);
+}
+
+.cp-venue-action-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cp-map-link-btn {
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--primary-600);
+  font-weight: 600;
+  text-align: left;
+}
+
+.cp-map-link-btn:hover {
+  text-decoration: underline;
+  background: transparent;
+}
+
+/* Sections */
+.cp-modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cp-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.cp-section-text {
+  font-size: 0.95rem;
+  color: var(--navy-700);
+  line-height: 1.65;
+}
+
+.cp-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.cp-interest-tag {
+  background: var(--navy-100);
+  color: var(--navy-700);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.cp-info-box {
+  background: var(--navy-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cp-info-row {
+  font-size: 0.88rem;
+  color: var(--navy-700);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.cp-info-row strong {
+  color: var(--navy-900);
+}
+
+/* Benefits Grid */
+.cp-benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.cp-benefit-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.cp-benefit-full {
+  grid-column: 1 / -1;
+}
+
+.cp-benefit-icon {
+  color: var(--primary-600);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.cp-benefit-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--navy-500);
+  margin-bottom: 0.2rem;
+}
+
+.cp-benefit-desc {
+  font-size: 0.88rem;
+  color: var(--navy-700);
+}
+
+.cp-benefit-highlight {
+  color: var(--navy-900);
+  font-weight: 500;
+}
+
+.cp-text-muted {
+  color: var(--navy-400);
+  font-style: italic;
+}
+
+.cp-notice-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+}
+
+.cp-notice-banner.warning {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-border);
+}
+
+/* Modal Sidebar */
+.cp-modal-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.cp-sidebar-card {
+  background: var(--bg-surface-soft);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.cp-sidebar-heading {
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--navy-500);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.85rem;
+}
+
+.cp-reg-status-badge {
+  margin-bottom: 1rem;
+}
+
+.cp-status-open {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+}
+
+.cp-status-registered {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--primary-50);
+  color: var(--primary-700);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+}
+
+.cp-status-closed,
+.cp-status-cancelled {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background: var(--navy-100);
+  color: var(--navy-600);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+}
+
+.cp-sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.cp-external-reg-link {
+  font-size: 0.88rem;
+}
+
+.cp-sidebar-utility-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.cp-btn-saved {
+  border-color: var(--primary-500);
+  color: var(--primary-600);
+}
+
+.cp-registration-disclaimer {
+  font-size: 0.72rem;
+  color: var(--navy-400);
+  margin-top: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Organizer Profile */
+.cp-organizer-profile {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.cp-organizer-avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--primary-100);
+  color: var(--primary-700);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cp-organizer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cp-organizer-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.cp-verified-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--primary-500);
+  color: #FFFFFF;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-full);
+}
+
+.cp-organizer-contact {
+  font-size: 0.78rem;
+  color: var(--navy-500);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cp-organizer-contact a {
+  color: var(--primary-600);
+  word-break: break-all;
+}
+
+.cp-organizer-contact a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .cp-modal-body {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-modal-meta-grid,
+  .cp-benefits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-modal-title {
+    font-size: 1.45rem;
+  }
+}

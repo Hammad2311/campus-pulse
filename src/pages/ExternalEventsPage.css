@@ -1,0 +1,137 @@
+.cp-external-page {
+  padding-bottom: 5rem;
+}
+
+.cp-external-hero {
+  background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+  color: #FFFFFF;
+  padding: 3.5rem 0 3rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cp-external-hero-content {
+  max-width: 780px;
+}
+
+.cp-external-tag {
+  color: #A5B4FC;
+}
+
+.cp-external-title {
+  color: #FFFFFF;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-top: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.cp-external-desc {
+  font-size: 1.05rem;
+  color: #CBD5E1;
+  line-height: 1.6;
+}
+
+.cp-external-body {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Filter Bar */
+.cp-external-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #FFFFFF;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.cp-external-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 280px;
+}
+
+.cp-external-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--navy-400);
+}
+
+.cp-external-search-input {
+  width: 100%;
+  padding: 0.65rem 2.2rem 0.65rem 2.5rem;
+  font-size: 0.9rem;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-soft);
+}
+
+.cp-external-search-input:focus {
+  border-color: var(--primary-500);
+  background: #FFFFFF;
+}
+
+.cp-external-search-clear {
+  position: absolute;
+  right: 0.75rem;
+  color: var(--navy-400);
+}
+
+.cp-external-cat-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.cp-external-cat-pill {
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--navy-600);
+  background: var(--navy-50);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.cp-external-cat-pill.active {
+  background: var(--primary-600);
+  color: #FFFFFF;
+  border-color: var(--primary-600);
+}
+
+.cp-external-reset-btn {
+  margin-left: auto;
+}
+
+.cp-external-results-header {
+  font-size: 0.9rem;
+  color: var(--navy-600);
+}
+
+.cp-external-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.75rem;
+}
+
+.cp-external-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.75rem;
+}
+
+@media (max-width: 640px) {
+  .cp-external-title {
+    font-size: 1.85rem;
+  }
+}

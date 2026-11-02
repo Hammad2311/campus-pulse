@@ -7,26 +7,59 @@
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase.js";
 
-export async function getOrganizerProfile(uid) {
+const ORGANIZER_PERMISSIONS = [
+  "events:read:published",
+  "events:read:own",
+  "events:create",
+  "events:update:draft",
+  "events:cancel:own",
+  "events:delete:draft",
+];
+
+const ADMIN_PERMISSIONS = [
+  "events:read:published",
+  "events:read:own",
+  "events:read:all",
+  "events:create",
+  "events:update:draft",
+  "events:cancel:own",
+  "events:delete:draft",
+  "events:publish",
+  "events:verify_benefits",
+];
+
+function mapUser(user) {
+  if (!user) return null;
+
+  return {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName || "",
+  };
+}
+
+async function getAdminProfile(uid) {
   if (!uid) return null;
 
-  const snapshot = await getDoc(doc(db, "organizers", uid));
+  const snapshot = await getDoc(doc(db, "admins", uid));
+
   if (!snapshot.exists()) return null;
 
   return { uid: snapshot.id, ...snapshot.data() };
 }
 
-export async function getAdminProfile(uid) {
+export async function getOrganizerProfile(uid = getCurrentUser()?.uid) {
   if (!uid) return null;
 
-  const snapshot = await getDoc(doc(db, "admins", uid));
+  const snapshot = await getDoc(doc(db, "organizers", uid));
+
   if (!snapshot.exists()) return null;
 
   return { uid: snapshot.id, ...snapshot.data() };
 }
 
 export function getCurrentUser() {
-  return auth.currentUser;
+  return mapUser(auth.currentUser);
 }
 
 export async function signInOrganizer(email, password) {
@@ -37,102 +70,114 @@ export async function signInOrganizer(email, password) {
   );
 
   try {
-    const profile = await getOrganizerProfile(credential.user.uid);
+    const uid = credential.user.uid;
+
+    const adminProfile = await getAdminProfile(uid);
+
+    if (adminProfile?.active === true) {
+      return {
+        user: mapUser(credential.user),
+        profile: adminProfile,
+        role: "admin",
+        permissions: ADMIN_PERMISSIONS,
+      };
+    }
+
+    const profile = await getOrganizerProfile(uid);
 
     if (!profile || profile.status !== "active") {
       throw new Error("Organizer account is missing or disabled.");
     }
 
-    return { user: credential.user, profile };
+    return {
+      user: mapUser(credential.user),
+      profile,
+      role: "organizer",
+      permissions: ORGANIZER_PERMISSIONS,
+    };
   } catch (error) {
     await signOut(auth);
     throw error;
   }
 }
 
-export async function signInAdmin(email, password) {
-  const credential = await signInWithEmailAndPassword(
-    auth,
-    email.trim(),
-    password
-  );
-
-  try {
-    const profile = await getAdminProfile(credential.user.uid);
-
-    if (!profile || profile.active !== true) {
-      throw new Error("Admin account is missing or disabled.");
-    }
-
-    return { user: credential.user, profile };
-  } catch (error) {
-    await signOut(auth);
-    throw error;
-  }
+export async function signOutOrganizer() {
+  await signOut(auth);
+  return true;
 }
 
-export function signOutOrganizer() {
-  return signOut(auth);
-}
+export function hasPermission(permission, context = {}) {
+  const { role = "guest", profile = null } = context;
 
-export function hasPermission(profile, permission) {
-  if (!profile) return false;
-
-  const organizerPermissions = [
-    "createEvent",
-    "updateOwnEvent",
-    "cancelOwnEvent",
-    "viewOwnEvents",
-    "deleteOwnDraft",
-  ];
-
-  const adminPermissions = [
-    ...organizerPermissions,
-    "publishEvent",
-    "verifyBenefits",
-    "manageAllEvents",
-    "manageOrganizers",
-  ];
-
-  if (profile.role === "organizer" && profile.status === "active") {
-    return organizerPermissions.includes(permission);
+  if (role === "admin" && profile?.active === true) {
+    return ADMIN_PERMISSIONS.includes(permission);
   }
 
-  if (profile.role === "admin" && profile.active === true) {
-    return adminPermissions.includes(permission);
+  if (role === "organizer" && profile?.status === "active") {
+    return ORGANIZER_PERMISSIONS.includes(permission);
   }
 
-  return false;
+  return permission === "events:read:published";
 }
 
 export function onAuthChange(callback) {
-  return onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      callback(null);
+  return onAuthStateChanged(auth, async (firebaseUser) => {
+    if (!firebaseUser) {
+      callback({
+        user: null,
+        profile: null,
+        role: "guest",
+        permissions: ["events:read:published"],
+        loading: false,
+      });
       return;
     }
 
     try {
-      const adminProfile = await getAdminProfile(user.uid);
+      const adminProfile = await getAdminProfile(firebaseUser.uid);
 
       if (adminProfile?.active === true) {
-        callback({ user, profile: { ...adminProfile, role: "admin" } });
-        return;
-      }
-
-      const organizerProfile = await getOrganizerProfile(user.uid);
-
-      if (organizerProfile?.status === "active") {
         callback({
-          user,
-          profile: { ...organizerProfile, role: "organizer" },
+          user: mapUser(firebaseUser),
+          profile: adminProfile,
+          role: "admin",
+          permissions: ADMIN_PERMISSIONS,
+          loading: false,
         });
         return;
       }
 
-      callback({ user, profile: null });
+      const profile = await getOrganizerProfile(firebaseUser.uid);
+
+      if (profile?.status === "active") {
+        callback({
+          user: mapUser(firebaseUser),
+          profile,
+          role: "organizer",
+          permissions: ORGANIZER_PERMISSIONS,
+          loading: false,
+        });
+        return;
+      }
+
+      await signOut(auth);
+
+      callback({
+        user: null,
+        profile: null,
+        role: "guest",
+        permissions: ["events:read:published"],
+        loading: false,
+      });
     } catch (error) {
-      callback({ user, profile: null, error });
+      callback({
+        user: mapUser(firebaseUser),
+        profile: null,
+        role: "guest",
+        permissions: ["events:read:published"],
+        loading: false,
+        error,
+      });
     }
   });
 }

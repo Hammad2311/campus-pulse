@@ -288,9 +288,12 @@ export async function cancelEvent(eventId, organizerId = 'org-cs-dept') {
 export function getSavedEventIds() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_SAVED);
-    return raw ? JSON.parse(raw) : ["evt-001", "evt-003"];
+    const savedIds = raw ? JSON.parse(raw) : [];
+    return Array.isArray(savedIds)
+      ? savedIds.filter(id => id && id !== "evt-001" && id !== "evt-003")
+      : [];
   } catch (err) {
-    return ["evt-001", "evt-003"];
+    return [];
   }
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { getFeaturedEvents } from '../services/mockEventService';
+import { getEvents } from '../services/eventService';
 import { EventCard } from '../components/events/EventCard';
 import { 
   Compass, 
@@ -28,9 +28,9 @@ export function LandingPage() {
   useEffect(() => {
     async function loadFeatured() {
       try {
-        const { data, error } = await getFeaturedEvents();
+        const { data, error } = await getEvents({ status: 'published', upcomingOnly: true });
         if (!error && data) {
-          setFeaturedEvents(data);
+          setFeaturedEvents(data.slice(0, 3));
         }
       } catch (err) {
         console.error('Failed to load featured events', err);
@@ -63,7 +63,7 @@ export function LandingPage() {
     {
       icon: MapPin,
       title: "Campus Map Boundary",
-      description: "Integrated with Chandrashekhar's Google Maps component boundary for real-time spatial venue discovery."
+      description: "Uses an image-based Alliance University campus map with mapped event venues."
     },
     {
       icon: Shield,
@@ -226,7 +226,7 @@ export function LandingPage() {
               <div className="cp-map-feature-checklist">
                 <div className="cp-checklist-item">
                   <CheckCircle size={18} className="cp-check-icon" />
-                  <span>Configured for Chandrashekhar's Google Maps JavaScript API component</span>
+                  <span>Uses the supplied Alliance University campus directory image</span>
                 </div>
                 <div className="cp-checklist-item">
                   <CheckCircle size={18} className="cp-check-icon" />

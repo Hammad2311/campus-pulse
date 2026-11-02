@@ -1,209 +1,167 @@
 .cp-map-full-viewport {
+  position: relative;
   width: 100%;
   height: 100%;
-  position: relative;
+  min-height: 480px;
   overflow: hidden;
-  background: #F1F4FD;
+  isolation: isolate;
+  background: #fff8f4;
 }
 
-.cp-map-canvas-full {
+.cp-campus-map-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  cursor: default;
+}
+
+.cp-campus-map-viewport.is-dragging { cursor: grabbing; }
+
+.cp-campus-map-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+  will-change: transform;
+  user-select: none;
+}
+
+.cp-campus-map-image {
+  display: block;
   width: 100%;
   height: 100%;
-  position: relative;
-  overflow-y: auto;
-  background: 
-    radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.08) 0%, rgba(241, 244, 253, 0.95) 75%),
-    #F8F9FE;
-  display: flex;
-  flex-direction: column;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
 }
 
-/* Boundary Pill */
-.cp-map-boundary-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--primary-700);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  padding: 0.4rem 0.9rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--primary-200);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 1.25rem;
-}
-
-.cp-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: #10B981;
-}
-
-.cp-status-dot.pulse {
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  animation: pulseDot 1.8s infinite;
-}
-
-@keyframes pulseDot {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-/* Stage Overlay */
-.cp-map-stage-overlay {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 1.5rem 3rem;
-  max-width: 1100px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.cp-map-placeholder-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 100%;
-}
-
-.cp-placeholder-radar {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-full);
-  background: #FFFFFF;
-  color: var(--primary-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-md);
-  border: 2px solid var(--primary-200);
-  margin-bottom: 1rem;
-}
-
-.cp-compass-icon {
-  animation: compassSpin 8s ease-in-out infinite alternate;
-}
-
-@keyframes compassSpin {
-  0% { transform: rotate(-20deg); }
-  100% { transform: rotate(20deg); }
-}
-
-.cp-map-lead-title {
-  font-size: 1.85rem;
-  font-weight: 800;
-  color: var(--navy-900);
-  margin-bottom: 0.35rem;
-}
-
-.cp-map-lead-desc {
-  font-size: 0.95rem;
-  color: var(--navy-600);
-  max-width: 620px;
-  margin-bottom: 2rem;
-  line-height: 1.5;
-}
-
-/* Venues Grid on Map Canvas */
-.cp-map-venues-grid {
+.cp-campus-event-marker {
+  position: absolute;
+  z-index: 2;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-  width: 100%;
-}
-
-.cp-venue-marker-card {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(8px);
-  border: 1.5px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 1.15rem;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  width: clamp(25px, 3.2vw, 38px);
+  height: clamp(25px, 3.2vw, 38px);
+  padding: 0;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--event-marker-color, #475569);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(25, 20, 20, 0.42);
+  font: inherit;
+  font-size: clamp(12px, 1.45vw, 17px);
+  line-height: 1;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  box-shadow: var(--shadow-xs);
+  transform: translate(calc(-50% + var(--event-marker-offset, 0px)), -50%);
+  transition: transform 140ms ease, box-shadow 140ms ease, outline 140ms ease;
+  pointer-events: auto;
 }
 
-.cp-venue-marker-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--primary-400);
-  box-shadow: var(--shadow-md);
-  background: #FFFFFF;
+.cp-campus-event-marker:hover {
+  z-index: 5;
+  transform: translate(calc(-50% + var(--event-marker-offset, 0px)), -50%) scale(1.15);
+  box-shadow: 0 4px 12px rgba(25, 20, 20, 0.5);
 }
 
-.cp-venue-marker-card.active {
-  border-color: var(--primary-600);
-  background: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+.cp-campus-event-marker.is-selected {
+  z-index: 6;
+  outline: 3px solid #7f1029;
+  outline-offset: 2px;
+  transform: translate(calc(-50% + var(--event-marker-offset, 0px)), -50%) scale(1.18);
 }
 
-.cp-venue-marker-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+.cp-campus-map-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 8;
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(115, 20, 45, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 3px 14px rgba(45, 20, 28, 0.16);
 }
 
-.cp-marker-pin-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-50);
-  color: var(--primary-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.cp-campus-map-controls button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #8f0d2f;
+  color: #fff;
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.cp-venue-card-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--navy-900);
-  line-height: 1.3;
+.cp-campus-map-controls button:hover { background: #6f0824; }
+
+.cp-campus-map-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 7;
+  max-width: calc(100% - 24px);
+  padding: 7px 10px;
+  border: 1px solid rgba(115, 20, 45, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #5d2434;
+  font-size: 12px;
+  box-shadow: 0 2px 10px rgba(45, 20, 28, 0.12);
+  pointer-events: none;
 }
 
-.cp-venue-card-location {
-  font-size: 0.8rem;
-  color: var(--navy-600);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.cp-campus-map-unlocated {
+  position: absolute;
+  right: 64px;
+  top: 12px;
+  z-index: 9;
+  width: min(310px, calc(100% - 90px));
+  max-height: min(280px, 45%);
+  overflow: auto;
+  border: 1px solid #ead5da;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.97);
+  color: #4b2430;
+  box-shadow: 0 3px 14px rgba(45, 20, 28, 0.16);
+  font-size: 12px;
 }
 
-.cp-venue-coords-tag {
-  font-size: 0.72rem;
-  font-family: monospace;
-  color: var(--primary-700);
-  background: var(--primary-50);
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-xs);
-  width: fit-content;
-  font-weight: 600;
+.cp-campus-map-unlocated summary { padding: 9px 11px; font-weight: 700; cursor: pointer; }
+.cp-campus-map-unlocated ul { display: grid; gap: 4px; margin: 0; padding: 0 7px 7px; list-style: none; }
+
+.cp-campus-map-unlocated li button {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  padding: 7px;
+  border: 0;
+  border-radius: 7px;
+  background: #fff7f8;
+  color: #3d1c27;
+  text-align: left;
+  cursor: pointer;
 }
 
-.cp-venue-no-coords {
-  font-size: 0.72rem;
-  color: var(--navy-400);
-  font-style: italic;
-}
+.cp-campus-map-unlocated li button:hover { background: #f8e8ec; }
+.cp-campus-map-unlocated small { color: #795866; }
 
-/* Responsive */
 @media (max-width: 640px) {
-  .cp-map-lead-title {
-    font-size: 1.45rem;
-  }
-
-  .cp-map-venues-grid {
-    grid-template-columns: 1fr;
-  }
+  .cp-map-full-viewport { min-height: 420px; }
+  .cp-campus-map-controls { top: 8px; right: 8px; gap: 4px; padding: 4px; }
+  .cp-campus-map-controls button { width: 31px; height: 31px; }
+  .cp-campus-map-hint { left: 8px; bottom: 8px; font-size: 11px; }
+  .cp-campus-map-unlocated { top: 8px; right: 53px; width: min(250px, calc(100% - 70px)); }
 }
+
+@media (prefers-reduced-motion: reduce) { .cp-campus-event-marker { transition: none; } }

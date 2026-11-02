@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { getEvents } from '../services/mockEventService';
+import { getEvents } from '../services/eventService';
 import { EventCard } from '../components/events/EventCard';
 import { 
   Bookmark, 

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useEvents } from '../../context/EventContext';
-import { CategoryBadge, EventTypeBadge, Badge } from '../common/Badge';
+import { CategoryBadge, EventTypeBadge, Badge, VerificationBadge } from '../common/Badge';
+import { INTEREST_AREA_LABELS } from '../../data/mockEvents';
 import { 
   X, 
   Calendar, 
@@ -12,12 +13,10 @@ import {
   CheckCircle2, 
   FileCheck, 
   Sparkles, 
-  Users, 
-  Mail, 
-  Phone, 
   Bookmark,
   Share2,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
 import './EventDetailsModal.css';
 
@@ -27,9 +26,6 @@ export function EventDetailsModal() {
     closeEventDetails, 
     savedEventIds, 
     handleToggleSave, 
-    registeredEventIds, 
-    handleRegister, 
-    handleCancelRegistration,
     navigateTo,
     showToast
   } = useEvents();
@@ -54,13 +50,14 @@ export function EventDetailsModal() {
 
   const event = activeModalEvent;
   const isSaved = savedEventIds.includes(event.id);
-  const isRegistered = registeredEventIds.includes(event.id);
 
-  // Date formatting helpers
-  const formatDateTimeRange = (startIso, endIso) => {
-    if (!startIso) return { start: '', end: '' };
-    const start = new Date(startIso);
-    const end = endIso ? new Date(endIso) : null;
+  // Date formatting helpers for JavaScript Date instances
+  const formatDateTimeRange = (startObj, endObj) => {
+    if (!startObj) return { date: '', time: '' };
+    const start = startObj instanceof Date ? startObj : new Date(startObj);
+    const end = endObj ? (endObj instanceof Date ? endObj : new Date(endObj)) : null;
+
+    if (isNaN(start.getTime())) return { date: '', time: '' };
 
     const dateOptions = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
     const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
@@ -69,7 +66,7 @@ export function EventDetailsModal() {
     const startTimeStr = start.toLocaleTimeString('en-US', timeOptions);
 
     let endStr = '';
-    if (end) {
+    if (end && !isNaN(end.getTime())) {
       const isSameDay = start.toDateString() === end.toDateString();
       if (isSameDay) {
         endStr = end.toLocaleTimeString('en-US', timeOptions);
@@ -84,7 +81,7 @@ export function EventDetailsModal() {
     };
   };
 
-  const { date: formattedDate, time: formattedTime } = formatDateTimeRange(event.startDate, event.endDate);
+  const { date: formattedDate, time: formattedTime } = formatDateTimeRange(event.startDateTime, event.endDateTime);
 
   const handleCopyLink = () => {
     if (navigator.clipboard) {
@@ -97,6 +94,10 @@ export function EventDetailsModal() {
     closeEventDetails();
     navigateTo('map', { selectedEventId: event.id });
   };
+
+  const organizerName = typeof event.organizer === 'string' 
+    ? event.organizer 
+    : event.organizer?.name || 'Campus Entity';
 
   return (
     <div className="cp-modal-backdrop" onClick={closeEventDetails}>
@@ -119,7 +120,7 @@ export function EventDetailsModal() {
         {/* Modal Header Image */}
         <div className="cp-modal-banner-wrap">
           <img 
-            src={event.image} 
+            src={event.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80"} 
             alt={event.title}
             className="cp-modal-banner"
             onError={(e) => {
@@ -133,6 +134,7 @@ export function EventDetailsModal() {
             <div className="cp-modal-badges">
               <CategoryBadge category={event.category} size="md" />
               <EventTypeBadge type={event.eventType} size="md" />
+              <VerificationBadge status={event.benefitsVerificationStatus} size="sm" />
               {event.status === 'draft' && <Badge variant="draft">Draft (Private)</Badge>}
               {event.status === 'cancelled' && <Badge variant="cancelled">Cancelled</Badge>}
             </div>
@@ -164,12 +166,15 @@ export function EventDetailsModal() {
                 </div>
               </div>
 
-              <div className="cp-modal-meta-card">
+              <div className="cp-modal-meta-card cp-meta-venue-card">
                 <MapPin className="cp-modal-meta-icon" size={18} />
                 <div className="cp-venue-action-wrap">
                   <div>
                     <div className="cp-meta-label">Venue</div>
-                    <div className="cp-meta-value">{event.venue}</div>
+                    <div className="cp-meta-value">{event.venueName}</div>
+                    {event.venueAddress && (
+                      <div className="cp-meta-subvalue">{event.venueAddress}</div>
+                    )}
                   </div>
                   <button 
                     className="btn btn-ghost btn-sm cp-map-link-btn"
@@ -182,70 +187,62 @@ export function EventDetailsModal() {
               </div>
 
               <div className="cp-modal-meta-card">
-                <Users className="cp-modal-meta-icon" size={18} />
+                <UserCheck className="cp-modal-meta-icon" size={18} />
                 <div>
-                  <div className="cp-meta-label">Attendance</div>
-                  <div className="cp-meta-value">
-                    {event.capacity ? (
-                      <span>{event.registeredCount || 0} / {event.capacity} registered</span>
-                    ) : (
-                      <span>Open campus entry</span>
-                    )}
-                  </div>
+                  <div className="cp-meta-label">Organized By</div>
+                  <div className="cp-meta-value">{organizerName}</div>
                 </div>
               </div>
             </div>
 
-            {/* Interest Tags */}
-            {event.interests && event.interests.length > 0 && (
+            {/* Interest Areas (Approved Contract Enums) */}
+            {event.interestArea && event.interestArea.length > 0 && (
               <div className="cp-modal-section">
                 <h3 className="cp-section-title">Focus & Interest Areas</h3>
                 <div className="cp-tag-list">
-                  {event.interests.map((tag, idx) => (
+                  {event.interestArea.map((tag, idx) => (
                     <span key={idx} className="cp-interest-tag">
-                      #{tag}
+                      #{INTEREST_AREA_LABELS[tag] || tag}
                     </span>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Comprehensive Description */}
+            {/* Description */}
             <div className="cp-modal-section">
               <h3 className="cp-section-title">About the Event</h3>
               <p className="cp-section-text">{event.description}</p>
             </div>
 
-            {/* Eligibility & Registration Requirements */}
+            {/* Eligibility & Guidelines */}
             <div className="cp-modal-section">
-              <h3 className="cp-section-title">Eligibility & Guidelines</h3>
+              <h3 className="cp-section-title">Eligibility & Registration</h3>
               <div className="cp-info-box">
                 <div className="cp-info-row">
-                  <strong>Student Eligibility:</strong>
+                  <strong>Eligibility:</strong>
                   <span>{event.eligibility || 'Open to all students with active university identity.'}</span>
                 </div>
-                {event.registrationRequirements && (
-                  <div className="cp-info-row">
-                    <strong>Prerequisites:</strong>
-                    <span>{event.registrationRequirements}</span>
-                  </div>
-                )}
+                <div className="cp-info-row">
+                  <strong>Registration Required:</strong>
+                  <span>{event.registrationRequired ? 'Yes — prior registration required.' : 'No — walk-in / open admission.'}</span>
+                </div>
               </div>
             </div>
 
             {/* Academic Benefits, Activity Points & Certificates */}
             <div className="cp-modal-section">
-              <h3 className="cp-section-title">Academic & Participation Benefits</h3>
+              <h3 className="cp-section-title">Academic & Attendance Benefits</h3>
               <div className="cp-benefits-grid">
-                {/* Activity Points (Strictly hide or neutral if unavailable) */}
+                {/* Activity Points */}
                 <div className="cp-benefit-card">
                   <Award size={20} className="cp-benefit-icon" />
                   <div>
                     <div className="cp-benefit-title">Activity Points</div>
                     <div className="cp-benefit-desc">
-                      {event.activityPoints !== undefined && event.activityPoints > 0 ? (
+                      {event.activityPoints !== null && event.activityPoints > 0 ? (
                         <span className="cp-benefit-highlight">
-                          <strong>{event.activityPoints} University Activity Points</strong> credited upon attendance verification.
+                          <strong>+{event.activityPoints} University Activity Points</strong> upon verified attendance.
                         </span>
                       ) : (
                         <span className="cp-text-muted">No official activity points designated for this event.</span>
@@ -260,24 +257,26 @@ export function EventDetailsModal() {
                   <div>
                     <div className="cp-benefit-title">Certificate Availability</div>
                     <div className="cp-benefit-desc">
-                      {event.certificateAvailable ? (
+                      {event.certificateAvailable === true ? (
                         <span className="cp-benefit-highlight">
-                          Digital verified completion/participation certificate provided.
+                          Digital participation or completion certificate provided.
                         </span>
+                      ) : event.certificateAvailable === false ? (
+                        <span className="cp-text-muted">No participation certificate offered.</span>
                       ) : (
-                        <span className="cp-text-muted">No participation certificate offered for this session.</span>
+                        <span className="cp-text-muted">Certificate availability not specified.</span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* General attendance benefits if available */}
-                {event.attendanceBenefits && (
+                {/* Attendance Benefit */}
+                {event.attendanceBenefit && (
                   <div className="cp-benefit-card cp-benefit-full">
                     <Sparkles size={20} className="cp-benefit-icon" />
                     <div>
-                      <div className="cp-benefit-title">Perks & Deliverables</div>
-                      <div className="cp-benefit-desc">{event.attendanceBenefits}</div>
+                      <div className="cp-benefit-title">Designated Benefits</div>
+                      <div className="cp-benefit-desc">{event.attendanceBenefit}</div>
                     </div>
                   </div>
                 )}
@@ -295,56 +294,45 @@ export function EventDetailsModal() {
             )}
           </div>
 
-          {/* Modal Sidebar / Action Column */}
+          {/* Modal Sidebar / Action Column (Per Section 7: registration uses external URL) */}
           <aside className="cp-modal-sidebar">
             <div className="cp-sidebar-card">
-              <h4 className="cp-sidebar-heading">Registration Actions</h4>
-              
-              {/* Registration Status */}
+              <h4 className="cp-sidebar-heading">Event Registration</h4>
+
+              {/* Status */}
               <div className="cp-reg-status-badge">
                 {event.status === 'cancelled' ? (
-                  <span className="cp-status-cancelled">Registration Closed (Cancelled)</span>
-                ) : isRegistered ? (
-                  <span className="cp-status-registered">
-                    <CheckCircle2 size={16} /> Registered for Event
-                  </span>
-                ) : event.isRegistrationOpen !== false ? (
-                  <span className="cp-status-open">Registration Open</span>
+                  <span className="cp-status-cancelled">Event Cancelled</span>
+                ) : event.status === 'completed' ? (
+                  <span className="cp-status-closed">Event Completed</span>
+                ) : event.registrationRequired ? (
+                  <span className="cp-status-open">Registration Required</span>
                 ) : (
-                  <span className="cp-status-closed">Registration Closed</span>
+                  <span className="cp-status-registered">Open Entry / Walk-in</span>
                 )}
               </div>
 
-              {/* Primary Action Buttons */}
+              {/* Primary Registration Action via Official External URL */}
               <div className="cp-sidebar-actions">
-                {isRegistered ? (
-                  <button 
-                    className="btn btn-secondary cp-w-full"
-                    onClick={() => handleCancelRegistration(event.id, event.title)}
-                  >
-                    Cancel Registration
-                  </button>
-                ) : (
-                  <button 
-                    className="btn btn-primary cp-w-full"
-                    onClick={() => handleRegister(event.id, event.title)}
-                    disabled={event.status === 'cancelled' || event.isRegistrationOpen === false}
-                  >
-                    <span>Register Attendance</span>
-                  </button>
-                )}
-
-                {/* External Registration Link using actual supplied URL */}
-                {event.registrationUrl && (
+                {event.status !== 'cancelled' && event.registrationUrl ? (
                   <a 
                     href={event.registrationUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="btn btn-outline cp-w-full cp-external-reg-link"
+                    className="btn btn-primary cp-w-full cp-external-reg-link"
                   >
-                    <span>Official Registration Portal</span>
-                    <ExternalLink size={14} />
+                    <span>Register on Official Portal</span>
+                    <ExternalLink size={15} />
                   </a>
+                ) : event.status !== 'cancelled' && !event.registrationRequired ? (
+                  <div className="cp-free-entry-note">
+                    <CheckCircle2 size={16} className="cp-check-green" />
+                    <span>Free seating available on event day.</span>
+                  </div>
+                ) : (
+                  <div className="cp-no-reg-note">
+                    <span>Direct online registration not applicable.</span>
+                  </div>
                 )}
 
                 <div className="cp-sidebar-utility-row">
@@ -353,7 +341,7 @@ export function EventDetailsModal() {
                     onClick={() => handleToggleSave(event.id, event.title)}
                   >
                     <Bookmark size={15} fill={isSaved ? "#6366F1" : "none"} />
-                    <span>{isSaved ? 'Saved' : 'Save Event'}</span>
+                    <span>{isSaved ? 'Bookmarked' : 'Bookmark Event'}</span>
                   </button>
 
                   <button 
@@ -366,38 +354,32 @@ export function EventDetailsModal() {
                 </div>
               </div>
 
-              {/* Disclaimer */}
+              {/* Notice per Contract V1 Section 7 */}
               <p className="cp-registration-disclaimer">
-                Registration attendance updates local session state. Final attendance syncing will connect to Hammad's Cloud Firestore.
+                Campus Pulse provides event discovery. External registration occurs directly on the organizer's verified portal.
               </p>
             </div>
 
-            {/* Organizer Profile Card */}
+            {/* Verification Status Card */}
             <div className="cp-sidebar-card">
-              <h4 className="cp-sidebar-heading">Organized By</h4>
-              <div className="cp-organizer-profile">
-                <div className="cp-organizer-avatar">
-                  <UserCheck size={20} />
-                </div>
-                <div className="cp-organizer-meta">
-                  <div className="cp-organizer-title">
-                    <span>{event.organizer?.name || 'Authorized Campus Host'}</span>
-                    {event.organizer?.isVerified && (
-                      <span className="cp-verified-tag">Verified</span>
-                    )}
+              <h4 className="cp-sidebar-heading">Host Verification</h4>
+              <div className="cp-verification-info">
+                <div className="cp-verification-row">
+                  <ShieldCheck size={18} className={event.benefitsVerificationStatus === 'verified' ? 'verified' : 'unverified'} />
+                  <div>
+                    <div className="cp-verification-status-label">
+                      {event.benefitsVerificationStatus === 'verified' 
+                        ? 'Authority Verified' 
+                        : event.benefitsVerificationStatus === 'unverified'
+                        ? 'Pending Authority Review'
+                        : 'Not Applicable'}
+                    </div>
+                    <div className="cp-verification-status-desc">
+                      {event.benefitsVerificationStatus === 'verified'
+                        ? 'Academic credits and certificate validity verified by university administration.'
+                        : 'Standard campus listing.'}
+                    </div>
                   </div>
-                  {event.organizer?.email && (
-                    <div className="cp-organizer-contact">
-                      <Mail size={12} />
-                      <a href={`mailto:${event.organizer.email}`}>{event.organizer.email}</a>
-                    </div>
-                  )}
-                  {event.organizer?.contactPhone && (
-                    <div className="cp-organizer-contact">
-                      <Phone size={12} />
-                      <span>{event.organizer.contactPhone}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

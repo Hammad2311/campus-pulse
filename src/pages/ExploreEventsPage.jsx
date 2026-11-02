@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useEvents } from '../context/EventContext';
-import { fetchEvents } from '../services/eventService';
+import { getEvents } from '../services/mockEventService';
 import { EventFilterBar } from '../components/events/EventFilterBar';
 import { EventCard } from '../components/events/EventCard';
 import { 
   Compass, 
   SearchX, 
   AlertTriangle, 
-  RefreshCw, 
-  Sparkles, 
-  Filter 
+  RefreshCw 
 } from 'lucide-react';
 import './ExploreEventsPage.css';
 
@@ -22,9 +20,9 @@ export function ExploreEventsPage() {
 
   const [filters, setFilters] = useState({
     searchQuery: '',
-    category: 'All',
-    interest: 'All',
-    eventType: 'all', // 'all' | 'university' | 'external'
+    category: 'all',
+    interestArea: 'all',
+    eventType: 'all', // 'all' | 'internal' | 'external'
     upcomingOnly: false
   });
 
@@ -32,8 +30,15 @@ export function ExploreEventsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchEvents(currentFilters);
-      setEvents(data);
+      const { data, error: serviceError } = await getEvents({
+        ...currentFilters,
+        status: 'published'
+      });
+      if (serviceError) {
+        setError(serviceError);
+      } else {
+        setEvents(data || []);
+      }
     } catch (err) {
       console.error('Error fetching events:', err);
       setError('Unable to load campus events. Please verify network status or try resetting filters.');
@@ -56,8 +61,8 @@ export function ExploreEventsPage() {
   const handleResetFilters = () => {
     setFilters({
       searchQuery: '',
-      category: 'All',
-      interest: 'All',
+      category: 'all',
+      interestArea: 'all',
       eventType: 'all',
       upcomingOnly: false
     });

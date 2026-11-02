@@ -7,13 +7,12 @@ import {
   AlertCircle, 
   ArrowRight, 
   ShieldCheck, 
-  Info,
-  Sparkles
+  Info
 } from 'lucide-react';
 import './OrganizerLoginPage.css';
 
 export function OrganizerLoginPage() {
-  const { loginOrganizer, navigateTo } = useEvents();
+  const { setOrganizerSession, navigateTo } = useEvents();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,18 +49,12 @@ export function OrganizerLoginPage() {
     setErrors({});
     setIsLoading(true);
 
-    // Simulate authentication processing
+    // Simulate input validation verification
     setTimeout(() => {
       setIsLoading(false);
-      // Log in to the demo organizer workspace
-      loginOrganizer(email);
-    }, 600);
-  };
-
-  const handleDemoFill = (demoEmail) => {
-    setEmail(demoEmail);
-    setPassword('Organizer@2026!');
-    setErrors({});
+      // Launch V1 Organizer Dashboard
+      setOrganizerSession(email);
+    }, 500);
   };
 
   return (
@@ -75,19 +68,19 @@ export function OrganizerLoginPage() {
             </div>
             <h1 className="cp-login-title">Organizer Sign In</h1>
             <p className="cp-login-subtitle">
-              Authorized portal for campus student chapters, department heads, and festival directors.
+              Authorized portal for campus student chapters, faculty advisors, and departmental event coordinators.
             </p>
           </div>
 
-          {/* Firebase Authentication Boundary Notice */}
+          {/* Firebase Authentication Boundary Notice (Section 6) */}
           <div className="cp-login-auth-notice">
             <div className="cp-auth-notice-header">
               <ShieldCheck size={16} className="cp-shield-icon" />
-              <span>Firebase Auth Boundary (Hammad Qubah)</span>
+              <span>Firebase Auth Integration Boundary</span>
             </div>
             <p className="cp-auth-notice-desc">
-              Production credential verification is integrated via Firebase Authentication. 
-              For the frontend evaluation, use any test email or quick presets below to enter the organizer dashboard.
+              Production credential authentication will be powered by Hammad Qubah's Firebase Authentication module. 
+              Enter your official campus email and password below to test the V1 organizer workspace.
             </p>
           </div>
 
@@ -101,7 +94,7 @@ export function OrganizerLoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="cp-login-form">
             <div className="cp-form-group">
-              <label className="cp-form-label">University / Club Email</label>
+              <label className="cp-form-label">University / Organization Email</label>
               <div className="cp-input-icon-wrap">
                 <Mail size={16} className="cp-input-icon" />
                 <input
@@ -136,39 +129,15 @@ export function OrganizerLoginPage() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <span>Authenticating...</span>
+                <span>Validating credentials...</span>
               ) : (
                 <>
-                  <span>Sign In to Dashboard</span>
+                  <span>Sign In to Organizer Portal</span>
                   <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
-
-          {/* Quick Demo Credentials */}
-          <div className="cp-demo-creds">
-            <div className="cp-demo-creds-title">
-              <Sparkles size={13} />
-              <span>Quick Demo Presets for Testing</span>
-            </div>
-            <div className="cp-demo-buttons">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm cp-demo-btn"
-                onClick={() => handleDemoFill('cs-events@campus.edu')}
-              >
-                Computer Science Dept.
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm cp-demo-btn"
-                onClick={() => handleDemoFill('cultural@campus.edu')}
-              >
-                Cultural Committee
-              </button>
-            </div>
-          </div>
 
           <div className="cp-login-footer">
             <button 

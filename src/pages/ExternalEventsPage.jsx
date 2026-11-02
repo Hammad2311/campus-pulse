@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { fetchEvents } from '../services/eventService';
+import { getEvents } from '../services/mockEventService';
 import { EventCard } from '../components/events/EventCard';
+import { 
+  APPROVED_CATEGORIES, 
+  CATEGORY_LABELS 
+} from '../data/mockEvents';
 import { 
   Globe2, 
   Search, 
-  ExternalLink, 
-  Sparkles, 
-  Trophy, 
-  Laptop, 
-  Compass, 
   X,
   RotateCcw
 } from 'lucide-react';
@@ -19,17 +18,19 @@ export function ExternalEventsPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     async function loadExternal() {
       setLoading(true);
       try {
-        const data = await fetchEvents({
+        const { data, error } = await getEvents({
           eventType: 'external',
           status: 'published'
         });
-        setEvents(data);
+        if (!error && data) {
+          setEvents(data);
+        }
       } catch (err) {
         console.error('Failed to load external events', err);
       } finally {
@@ -40,17 +41,16 @@ export function ExternalEventsPage() {
   }, []);
 
   const filteredEvents = events.filter(e => {
-    const matchesCat = selectedCategory === 'All' || e.category.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesCat = selectedCategory === 'all' || e.category === selectedCategory;
     const query = searchQuery.trim().toLowerCase();
+    const orgName = typeof e.organizer === 'string' ? e.organizer : e.organizer?.name || '';
     const matchesSearch = !query ||
       e.title.toLowerCase().includes(query) ||
       e.description.toLowerCase().includes(query) ||
-      e.venue.toLowerCase().includes(query) ||
-      e.organizer.name.toLowerCase().includes(query);
+      (e.venueName && e.venueName.toLowerCase().includes(query)) ||
+      orgName.toLowerCase().includes(query);
     return matchesCat && matchesSearch;
   });
-
-  const categories = ['All', 'Hackathon', 'Technology', 'Social', 'Workshop'];
 
   return (
     <div className="cp-external-page">
@@ -64,7 +64,7 @@ export function ExternalEventsPage() {
             </div>
             <h1 className="cp-external-title">External Hackathons & Summits</h1>
             <p className="cp-external-desc">
-              Broaden your horizons beyond our campus walls. Discover flagship 36-hour hackathons, nationwide entrepreneurship summits, and virtual developer sprints with international mentors and prize pools.
+              Broaden your horizons beyond our campus walls. Discover flagship hackathons, nationwide entrepreneurship summits, and virtual developer sprints with official portal registration links.
             </p>
           </div>
         </div>
@@ -93,23 +93,29 @@ export function ExternalEventsPage() {
           </div>
 
           <div className="cp-external-cat-tabs">
-            {categories.map(cat => (
+            <button
+              className={`cp-external-cat-pill ${selectedCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setSelectedCategory('all')}
+            >
+              All Categories
+            </button>
+            {APPROVED_CATEGORIES.map(catKey => (
               <button
-                key={cat}
-                className={`cp-external-cat-pill ${selectedCategory === cat ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat)}
+                key={catKey}
+                className={`cp-external-cat-pill ${selectedCategory === catKey ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(catKey)}
               >
-                {cat}
+                {CATEGORY_LABELS[catKey]}
               </button>
             ))}
           </div>
 
-          {(searchQuery || selectedCategory !== 'All') && (
+          {(searchQuery || selectedCategory !== 'all') && (
             <button
               className="btn btn-secondary btn-sm cp-external-reset-btn"
               onClick={() => {
                 setSearchQuery('');
-                setSelectedCategory('All');
+                setSelectedCategory('all');
               }}
             >
               <RotateCcw size={14} />

@@ -225,13 +225,30 @@
   margin-top: auto;
 }
 
-.cp-capacity-indicator {
+.cp-registration-status-hint {
   font-size: 0.78rem;
   color: var(--navy-500);
 }
 
-.cp-capacity-text strong {
-  color: var(--navy-800);
+.cp-reg-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  background: var(--navy-100);
+  color: var(--navy-700);
+}
+
+.cp-reg-tag.required {
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border: 1px solid var(--primary-200);
+}
+
+.cp-reg-tag.open {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
 }
 
 .cp-details-btn {

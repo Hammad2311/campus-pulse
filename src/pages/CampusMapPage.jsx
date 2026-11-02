@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { fetchEvents } from '../services/eventService';
+import { getEvents } from '../services/mockEventService';
 import { CampusMap } from '../components/map/CampusMap';
 import { CategoryBadge, EventTypeBadge } from '../components/common/Badge';
+import { 
+  APPROVED_CATEGORIES, 
+  CATEGORY_LABELS 
+} from '../data/mockEvents';
 import { 
   MapPin, 
   List, 
   Map as MapIcon, 
   Calendar, 
-  Clock, 
   ArrowRight, 
   Bookmark, 
-  Layers, 
   Search,
   Award
 } from 'lucide-react';
@@ -29,7 +31,7 @@ export function CampusMapPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   
   // Mobile View Toggle: 'map' or 'list'
   const [mobileActiveTab, setMobileActiveTab] = useState('map');
@@ -38,11 +40,13 @@ export function CampusMapPage() {
     async function loadMapEvents() {
       setLoading(true);
       try {
-        const data = await fetchEvents({ status: 'published' });
-        setEvents(data);
-        // Default selectedEventId if none set yet
-        if (!selectedEventId && data.length > 0) {
-          handleSelectEvent(data[0].id);
+        const { data, error } = await getEvents({ status: 'published' });
+        if (!error && data) {
+          setEvents(data);
+          // Default selectedEventId if none set yet
+          if (!selectedEventId && data.length > 0) {
+            handleSelectEvent(data[0].id);
+          }
         }
       } catch (err) {
         console.error('Error loading map events', err);
@@ -55,16 +59,12 @@ export function CampusMapPage() {
 
   // Filter events displayed on map
   const visibleEvents = events.filter(e => {
-    const matchesCat = selectedCategory === 'All' || e.category.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesCat = selectedCategory === 'all' || e.category === selectedCategory;
     const matchesSearch = !searchFilter || 
       e.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      e.venue.toLowerCase().includes(searchFilter.toLowerCase());
+      (e.venueName && e.venueName.toLowerCase().includes(searchFilter.toLowerCase()));
     return matchesCat && matchesSearch;
   });
-
-  const selectedEvent = events.find(e => e.id === selectedEventId) || (visibleEvents.length > 0 ? visibleEvents[0] : null);
-
-  const categories = ['All', 'Technology', 'Cultural', 'Sports', 'Workshop', 'Academic'];
 
   return (
     <div className="cp-map-page">
@@ -78,7 +78,7 @@ export function CampusMapPage() {
             </div>
             <h1 className="cp-map-title">Interactive Campus Map</h1>
             <p className="cp-map-subtitle">
-              Explore university event venues, academic halls, and labs. Click any marker or card to synchronize selection.
+              Explore university event venues, academic halls, and labs. Click any event card to synchronize with the map integration boundary.
             </p>
           </div>
 
@@ -115,13 +115,19 @@ export function CampusMapPage() {
           </div>
 
           <div className="cp-map-category-tabs">
-            {categories.map(cat => (
+            <button
+              className={`cp-map-cat-pill ${selectedCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setSelectedCategory('all')}
+            >
+              All Categories
+            </button>
+            {APPROVED_CATEGORIES.map(catKey => (
               <button
-                key={cat}
-                className={`cp-map-cat-pill ${selectedCategory === cat ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat)}
+                key={catKey}
+                className={`cp-map-cat-pill ${selectedCategory === catKey ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(catKey)}
               >
-                {cat}
+                {CATEGORY_LABELS[catKey]}
               </button>
             ))}
           </div>
@@ -161,6 +167,10 @@ export function CampusMapPage() {
                   const isSelected = evt.id === selectedEventId;
                   const isSaved = savedEventIds.includes(evt.id);
 
+                  const dateFormatted = evt.startDateTime instanceof Date 
+                    ? evt.startDateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    : '';
+
                   return (
                     <div
                       key={evt.id}
@@ -191,15 +201,15 @@ export function CampusMapPage() {
 
                       <div className="cp-item-venue-row">
                         <MapPin size={13} className="cp-venue-icon" />
-                        <span className="cp-item-venue">{evt.venue}</span>
+                        <span className="cp-item-venue">{evt.venueName}</span>
                       </div>
 
                       <div className="cp-item-meta-row">
                         <div className="cp-item-date">
                           <Calendar size={13} />
-                          <span>{new Date(evt.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          <span>{dateFormatted}</span>
                         </div>
-                        {evt.activityPoints && (
+                        {evt.activityPoints !== null && evt.activityPoints > 0 && (
                           <div className="cp-item-pts">
                             <Award size={12} />
                             <span>+{evt.activityPoints} Pts</span>

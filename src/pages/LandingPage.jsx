@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { fetchFeaturedEvents } from '../services/eventService';
+import { getFeaturedEvents } from '../services/mockEventService';
 import { EventCard } from '../components/events/EventCard';
 import { 
   Compass, 
@@ -13,7 +13,6 @@ import {
   CheckCircle, 
   ArrowRight,
   Shield,
-  Layers,
   Code2,
   Music,
   Trophy,
@@ -29,8 +28,10 @@ export function LandingPage() {
   useEffect(() => {
     async function loadFeatured() {
       try {
-        const events = await fetchFeaturedEvents();
-        setFeaturedEvents(events);
+        const { data, error } = await getFeaturedEvents();
+        if (!error && data) {
+          setFeaturedEvents(data);
+        }
       } catch (err) {
         console.error('Failed to load featured events', err);
       } finally {
@@ -41,33 +42,33 @@ export function LandingPage() {
   }, []);
 
   const categoryHighlights = [
-    { name: "Technology & AI", icon: Code2, count: "12+ Events", cat: "Technology", color: "#4F46E5", bg: "#EEF2FF" },
-    { name: "Hackathons", icon: Zap, count: "5 Flagships", cat: "Hackathon", color: "#7C3AED", bg: "#F5F3FF" },
-    { name: "Cultural & Arts", icon: Music, count: "8 Fests", cat: "Cultural", color: "#DB2777", bg: "#FDF2F8" },
-    { name: "Sports & Athletics", icon: Trophy, count: "6 Tourneys", cat: "Sports", color: "#059669", bg: "#ECFDF5" },
-    { name: "Academic & Talks", icon: BookOpen, count: "14 Lectures", cat: "Academic", color: "#2563EB", bg: "#EFF6FF" }
+    { name: "Technical Workshops", icon: Code2, count: "Hands-on Labs", cat: "technical_workshop", color: "#4F46E5", bg: "#EEF2FF" },
+    { name: "Hackathons", icon: Zap, count: "Competitions", cat: "hackathon", color: "#7C3AED", bg: "#F5F3FF" },
+    { name: "Cultural Programs", icon: Music, count: "Campus Fests", cat: "cultural_program", color: "#DB2777", bg: "#FDF2F8" },
+    { name: "Sports Tournaments", icon: Trophy, count: "Athletics", cat: "sports_event", color: "#059669", bg: "#ECFDF5" },
+    { name: "Guest Lectures & Seminars", icon: BookOpen, count: "Keynotes", cat: "guest_lecture", color: "#2563EB", bg: "#EFF6FF" }
   ];
 
   const valueProps = [
     {
       icon: Compass,
       title: "Centralized Discovery",
-      description: "No more fragmented WhatsApp groups or outdated bulletin boards. Every legitimate campus event in one unified timeline."
+      description: "No more fragmented chats or outdated bulletin boards. Every legitimate university and inter-collegiate event in one clean timeline."
     },
     {
       icon: Award,
-      title: "Verifiable Activity Points",
-      description: "Track events that award mandatory university activity points and official e-certificates endorsed by department heads."
+      title: "Verified Activity Points",
+      description: "Discover official listings that carry verified university activity points and administrative e-certificates."
     },
     {
       icon: MapPin,
-      title: "Smart Campus Geolocation",
-      description: "Pinpoint auditorium halls, labs, and sports arenas with precise campus coordinates and live interactive map markers."
+      title: "Campus Map Boundary",
+      description: "Integrated with Chandrashekhar's Google Maps component boundary for real-time spatial venue discovery."
     },
     {
       icon: Shield,
-      title: "Verified Student Organizations",
-      description: "Only authenticated university clubs, academic departments, and verified national hackathon hosts can publish listings."
+      title: "Authenticated Hosts",
+      description: "Listings curated by verified campus clubs, academic departments, and recognized national hackathon organizers."
     }
   ];
 
@@ -109,21 +110,21 @@ export function LandingPage() {
             </button>
           </div>
 
-          {/* Quick Stats Pill */}
+          {/* Quick Metrics */}
           <div className="cp-hero-metrics">
             <div className="cp-metric-box">
-              <span className="cp-metric-num">50+</span>
-              <span className="cp-metric-label">Active Campus Clubs</span>
-            </div>
-            <div className="cp-metric-sep"></div>
-            <div className="cp-metric-box">
-              <span className="cp-metric-num">3,500+</span>
-              <span className="cp-metric-label">Registered Students</span>
+              <span className="cp-metric-num">10+</span>
+              <span className="cp-metric-label">Approved Event Domains</span>
             </div>
             <div className="cp-metric-sep"></div>
             <div className="cp-metric-box">
               <span className="cp-metric-num">100%</span>
-              <span className="cp-metric-label">Verified Coordinates</span>
+              <span className="cp-metric-label">Contract V1 Aligned</span>
+            </div>
+            <div className="cp-metric-sep"></div>
+            <div className="cp-metric-box">
+              <span className="cp-metric-num">Interactive</span>
+              <span className="cp-metric-label">Campus Geo-Boundary</span>
             </div>
           </div>
         </div>
@@ -219,21 +220,21 @@ export function LandingPage() {
                 Never get lost on campus again.
               </h2>
               <p className="cp-map-feature-desc">
-                From finding obscure lecture halls in the Science Block to locating the open-air amphitheatre during cultural fest nights, our interactive map connects events with physical campus spaces in real-time.
+                From finding lecture halls in the Science Block to locating open-air amphitheatres during cultural fests, our interactive map coordinates events with campus venues in real-time.
               </p>
 
               <div className="cp-map-feature-checklist">
                 <div className="cp-checklist-item">
                   <CheckCircle size={18} className="cp-check-icon" />
-                  <span>Precise GPS coordinates for all major auditorium blocks</span>
+                  <span>Configured for Chandrashekhar's Google Maps JavaScript API component</span>
                 </div>
                 <div className="cp-checklist-item">
                   <CheckCircle size={18} className="cp-check-icon" />
-                  <span>Integrated with Chandrashekhar's Google Maps component boundary</span>
+                  <span>Supports safe handling of events without physical GPS coordinates</span>
                 </div>
                 <div className="cp-checklist-item">
                   <CheckCircle size={18} className="cp-check-icon" />
-                  <span>Direct marker-to-event synchronized selection</span>
+                  <span>Synchronized event card and marker selection flow</span>
                 </div>
               </div>
 
@@ -259,13 +260,9 @@ export function LandingPage() {
                   <MapPin size={24} />
                   <span className="cp-pin-label">Innovation Hub</span>
                 </div>
-                <div className="cp-preview-pin pin-3">
-                  <MapPin size={24} />
-                  <span className="cp-pin-label">Sports Complex</span>
-                </div>
               </div>
               <div className="cp-preview-caption">
-                <span>Click to open live interactive campus map →</span>
+                <span>Click to open interactive campus map →</span>
               </div>
             </div>
           </div>
@@ -308,7 +305,7 @@ export function LandingPage() {
             <div className="cp-cta-content">
               <h2 className="cp-cta-heading">Ready to dive into campus life?</h2>
               <p className="cp-cta-subtext">
-                Browse through upcoming hackathons, earn valuable academic credits, or publish your club's next major gathering.
+                Browse through upcoming hackathons, earn valuable academic credits, or draft your club's next major gathering.
               </p>
               <div className="cp-cta-actions">
                 <button 

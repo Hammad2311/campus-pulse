@@ -1,38 +1,34 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   getSavedEventIds, 
-  toggleSaveEvent, 
-  getRegisteredEventIds, 
-  registerForEvent, 
-  cancelRegistration 
-} from '../services/eventService';
+  toggleSaveEvent 
+} from '../services/mockEventService';
 
 const EventContext = createContext();
 
 export function EventProvider({ children }) {
   // Navigation / View State
-  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'explore' | 'map' | 'external' | 'my-events' | 'organizer-dashboard' | 'organizer-login'
+  const [currentView, setCurrentView] = useState('landing'); 
 
-  // Map & Event selection state (Frontend owns selectedEventId per Section 5E)
+  // Map & Event selection state (Parent owns selectedEventId per Section 5)
   const [selectedEventId, setSelectedEventId] = useState(null);
 
   // Modal State for Full Event Details
   const [activeModalEvent, setActiveModalEvent] = useState(null);
 
-  // User engagement state
+  // Client-side saved / bookmarked events (Frontend-only, explicitly not synced with Firebase)
   const [savedEventIds, setSavedEventIds] = useState([]);
-  const [registeredEventIds, setRegisteredEventIds] = useState([]);
 
   // Toast notification state
   const [toast, setToast] = useState(null); // { message, type: 'info' | 'success' | 'warning' }
 
-  // Organizer auth demo state (clearly identifies it will connect to Hammad's Firebase Auth)
+  // Organizer session state for testing V1 organizer dashboard
+  // Default demo organizer identity: 'org-cs-dept' (matches mock events createdBy)
   const [organizerUser, setOrganizerUser] = useState(null);
 
   useEffect(() => {
-    // Load initial bookmarks and registered IDs
+    // Load local bookmarks
     setSavedEventIds(getSavedEventIds());
-    setRegisteredEventIds(getRegisteredEventIds());
   }, []);
 
   const showToast = (message, type = 'info') => {
@@ -55,38 +51,30 @@ export function EventProvider({ children }) {
     const isNowSaved = toggleSaveEvent(eventId);
     setSavedEventIds(getSavedEventIds());
     if (isNowSaved) {
-      showToast(`Saved "${eventTitle}" to your bookmarks`, 'success');
+      showToast(`Bookmarked "${eventTitle}" locally`, 'success');
     } else {
       showToast(`Removed "${eventTitle}" from bookmarks`, 'info');
     }
     return isNowSaved;
   };
 
-  const handleRegister = (eventId, eventTitle = 'Event') => {
-    registerForEvent(eventId);
-    setRegisteredEventIds(getRegisteredEventIds());
-    showToast(`Successfully registered for "${eventTitle}"!`, 'success');
-  };
-
-  const handleCancelRegistration = (eventId, eventTitle = 'Event') => {
-    cancelRegistration(eventId);
-    setRegisteredEventIds(getRegisteredEventIds());
-    showToast(`Cancelled registration for "${eventTitle}"`, 'info');
-  };
-
   const handleSelectEvent = (eventId) => {
     setSelectedEventId(eventId);
   };
 
-  const loginOrganizer = (email) => {
-    setOrganizerUser({ email, role: 'organizer' });
-    showToast(`Organizer workspace loaded (Demo Mode)`, 'success');
+  const setOrganizerSession = (email) => {
+    setOrganizerUser({ 
+      email, 
+      id: 'org-cs-dept',
+      name: 'Dept. of Computer Science & Engineering'
+    });
+    showToast(`Organizer workspace loaded (V1 Scope)`, 'info');
     setCurrentView('organizer-dashboard');
   };
 
   const logoutOrganizer = () => {
     setOrganizerUser(null);
-    showToast(`Logged out from Organizer Hub`, 'info');
+    showToast(`Signed out of Organizer Workspace`, 'info');
     setCurrentView('landing');
   };
 
@@ -112,13 +100,10 @@ export function EventProvider({ children }) {
         closeEventDetails,
         savedEventIds,
         handleToggleSave,
-        registeredEventIds,
-        handleRegister,
-        handleCancelRegistration,
         toast,
         showToast,
         organizerUser,
-        loginOrganizer,
+        setOrganizerSession,
         logoutOrganizer
       }}
     >

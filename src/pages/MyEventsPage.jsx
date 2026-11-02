@@ -1,55 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
-import { fetchUserEvents } from '../services/eventService';
+import { getEvents } from '../services/mockEventService';
 import { EventCard } from '../components/events/EventCard';
 import { 
   Bookmark, 
-  CheckCircle2, 
   Calendar, 
   Compass, 
-  Award, 
-  Clock, 
   Sparkles,
-  ArrowRight
+  Info
 } from 'lucide-react';
 import './MyEventsPage.css';
 
 export function MyEventsPage() {
   const { 
     savedEventIds, 
-    registeredEventIds, 
     navigateTo 
   } = useEvents();
 
-  const [activeTab, setActiveTab] = useState('registered'); // 'registered' | 'saved' | 'upcoming'
-  const [userEvents, setUserEvents] = useState({
-    registered: [],
-    saved: [],
-    upcoming: []
-  });
+  const [activeTab, setActiveTab] = useState('saved'); // 'saved' | 'upcoming'
+  const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadUserEventsData() {
+    async function loadEventsData() {
       setLoading(true);
       try {
-        const data = await fetchUserEvents();
-        setUserEvents(data);
+        const { data, error } = await getEvents({ status: 'published' });
+        if (!error && data) {
+          setAllEvents(data);
+        }
       } catch (err) {
-        console.error('Failed to load user events', err);
+        console.error('Failed to load events for student view', err);
       } finally {
         setLoading(false);
       }
     }
-    loadUserEventsData();
-  }, [savedEventIds, registeredEventIds]);
+    loadEventsData();
+  }, []);
 
-  const currentList = userEvents[activeTab] || [];
+  const savedEvents = allEvents.filter(e => savedEventIds.includes(e.id));
+  const upcomingEvents = allEvents.filter(e => e.startDateTime >= new Date());
 
-  // Calculate total anticipated activity points
-  const totalActivityPoints = userEvents.registered.reduce((acc, curr) => {
-    return acc + (curr.activityPoints || 0);
-  }, 0);
+  const currentList = activeTab === 'saved' ? savedEvents : upcomingEvents;
 
   return (
     <div className="cp-my-events-page">
@@ -61,50 +53,38 @@ export function MyEventsPage() {
               <Bookmark size={15} />
               <span>Student Experience Hub</span>
             </div>
-            <h1 className="cp-my-events-title">My Event Schedule</h1>
+            <h1 className="cp-my-events-title">Saved Events & Schedule</h1>
             <p className="cp-my-events-subtitle">
-              Manage your confirmed event registrations, bookmarked sessions, and upcoming timetable.
+              Manage your bookmarked sessions and review upcoming campus happenings.
             </p>
           </div>
 
-          {/* Quick Activity Points Summary Card */}
-          <div className="cp-points-summary-card">
-            <div className="cp-points-icon-wrap">
-              <Award size={24} />
-            </div>
-            <div className="cp-points-meta">
-              <span className="cp-points-label">Earnable Activity Points</span>
-              <span className="cp-points-value">+{totalActivityPoints} Points</span>
+          <div className="cp-bookmarks-stat-card">
+            <Bookmark size={20} className="cp-stat-bookmark-icon" />
+            <div className="cp-stat-meta">
+              <span className="cp-stat-label">Local Bookmarks</span>
+              <span className="cp-stat-value">{savedEvents.length} Saved</span>
             </div>
           </div>
         </div>
 
-        {/* Status / Integration Banner */}
+        {/* Contract V1 Scope Notice */}
         <div className="cp-session-demo-notice">
-          <Sparkles size={16} className="cp-notice-sparkle" />
+          <Info size={18} className="cp-notice-sparkle" />
           <span>
-            <strong>Client Session Storage Active:</strong> Registrations and bookmarks are dynamically persisted in your local browser storage. Live cloud synchronization will connect with Hammad's Firebase Authentication & Cloud Firestore.
+            <strong>Local Bookmarking Active:</strong> Bookmarked events are stored locally in your browser for quick access. Per Contract V1, attendance records and official registrations occur directly on external organizer portals.
           </span>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation (No fake attendance / registration records per Section 7) */}
         <div className="cp-my-events-tabs">
-          <button
-            className={`cp-tab-btn ${activeTab === 'registered' ? 'active' : ''}`}
-            onClick={() => setActiveTab('registered')}
-          >
-            <CheckCircle2 size={16} />
-            <span>Registered Events</span>
-            <span className="cp-tab-count">{userEvents.registered.length}</span>
-          </button>
-
           <button
             className={`cp-tab-btn ${activeTab === 'saved' ? 'active' : ''}`}
             onClick={() => setActiveTab('saved')}
           >
             <Bookmark size={16} />
             <span>Saved & Bookmarks</span>
-            <span className="cp-tab-count">{userEvents.saved.length}</span>
+            <span className="cp-tab-count">{savedEvents.length}</span>
           </button>
 
           <button
@@ -112,8 +92,8 @@ export function MyEventsPage() {
             onClick={() => setActiveTab('upcoming')}
           >
             <Calendar size={16} />
-            <span>Upcoming Timeline</span>
-            <span className="cp-tab-count">{userEvents.upcoming.length}</span>
+            <span>Upcoming Campus Timeline</span>
+            <span className="cp-tab-count">{upcomingEvents.length}</span>
           </button>
         </div>
 
@@ -123,19 +103,17 @@ export function MyEventsPage() {
         ) : currentList.length === 0 ? (
           <div className="card cp-my-events-empty">
             <div className="cp-empty-tab-icon">
-              {activeTab === 'registered' ? <CheckCircle2 size={40} /> : <Bookmark size={40} />}
+              <Bookmark size={40} />
             </div>
             <h3 className="cp-empty-tab-title">
-              {activeTab === 'registered'
-                ? "No confirmed registrations yet"
-                : activeTab === 'saved'
+              {activeTab === 'saved'
                 ? "No saved events in your bookmarks"
                 : "No upcoming events scheduled"}
             </h3>
             <p className="cp-empty-tab-desc">
-              {activeTab === 'registered'
-                ? "Browse through upcoming campus workshops and hackathons to reserve your seat and accumulate activity points."
-                : "Click the bookmark icon on any event card across the platform to keep it in your personal shortlist."}
+              {activeTab === 'saved'
+                ? "Click the bookmark icon on any event card across the platform to keep it in your local shortlist."
+                : "Check back later for newly announced university seminars and hackathons."}
             </p>
             <button
               className="btn btn-primary cp-empty-explore-btn"

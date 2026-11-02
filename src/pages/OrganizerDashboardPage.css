@@ -76,6 +76,7 @@
 
 .cp-metric-icon.bg-indigo { background: linear-gradient(135deg, #6366F1, #4F46E5); }
 .cp-metric-icon.bg-emerald { background: linear-gradient(135deg, #10B981, #059669); }
+.cp-metric-icon.bg-amber { background: linear-gradient(135deg, #F59E0B, #D97706); }
 .cp-metric-icon.bg-blue { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
 
 .cp-metric-info {

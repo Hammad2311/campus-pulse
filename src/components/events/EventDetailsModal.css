@@ -156,10 +156,65 @@
   color: var(--navy-800);
 }
 
-.cp-venue-action-wrap {
+.cp-meta-venue-card {
+  grid-column: 1 / -1;
+}
+
+.cp-meta-subvalue {
+  font-size: 0.78rem;
+  color: var(--navy-500);
+}
+
+.cp-free-entry-note {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--success-bg);
+  color: var(--success-text);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cp-no-reg-note {
+  background: var(--navy-100);
+  color: var(--navy-600);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.cp-verification-row {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.cp-verification-row svg.verified {
+  color: #10B981;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.cp-verification-row svg.unverified {
+  color: #F59E0B;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.cp-verification-status-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.cp-verification-status-desc {
+  font-size: 0.75rem;
+  color: var(--navy-500);
+  margin-top: 0.2rem;
+  line-height: 1.4;
 }
 
 .cp-map-link-btn {

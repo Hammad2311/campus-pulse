@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Tag, AlertCircle, Save, Check } from 'lucide-react';
-import { CATEGORIES, INTEREST_TAGS } from '../../data/mockEvents';
+import { X, Calendar, MapPin, AlertCircle, Save, Info } from 'lucide-react';
+import { 
+  APPROVED_CATEGORIES, 
+  CATEGORY_LABELS, 
+  APPROVED_INTEREST_AREAS, 
+  INTEREST_AREA_LABELS 
+} from '../../data/mockEvents';
 import './EventFormModal.css';
 
 export function EventFormModal({
@@ -13,20 +18,24 @@ export function EventFormModal({
 
   const [formData, setFormData] = useState({
     title: '',
-    shortDescription: '',
     description: '',
-    category: 'Technology',
-    eventType: 'university',
-    interests: [],
-    startDate: '',
-    endDate: '',
-    venue: '',
-    capacity: '',
-    activityPoints: '',
-    certificateAvailable: true,
+    category: 'technical_workshop',
+    eventType: 'internal',
+    interestArea: ['web_development'],
+    startDateTime: '',
+    endDateTime: '',
+    venueName: '',
+    venueAddress: '',
+    latitude: '',
+    longitude: '',
+    organizer: 'Dept. of Computer Science & Engineering',
+    eligibility: '',
+    registrationRequired: true,
     registrationUrl: '',
-    image: '',
-    status: 'published'
+    certificateAvailable: true,
+    attendanceBenefit: '',
+    activityPoints: '',
+    imageUrl: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -34,40 +43,56 @@ export function EventFormModal({
 
   useEffect(() => {
     if (initialEvent) {
+      const formatInputDate = (d) => {
+        if (!d) return '';
+        const dt = d instanceof Date ? d : new Date(d);
+        if (isNaN(dt.getTime())) return '';
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+      };
+
       setFormData({
         title: initialEvent.title || '',
-        shortDescription: initialEvent.shortDescription || '',
         description: initialEvent.description || '',
-        category: initialEvent.category || 'Technology',
-        eventType: initialEvent.eventType || 'university',
-        interests: initialEvent.interests || [],
-        startDate: initialEvent.startDate ? initialEvent.startDate.slice(0, 16) : '',
-        endDate: initialEvent.endDate ? initialEvent.endDate.slice(0, 16) : '',
-        venue: initialEvent.venue || '',
-        capacity: initialEvent.capacity || '',
-        activityPoints: initialEvent.activityPoints !== undefined ? initialEvent.activityPoints : '',
-        certificateAvailable: initialEvent.certificateAvailable ?? true,
+        category: initialEvent.category || 'technical_workshop',
+        eventType: initialEvent.eventType || 'internal',
+        interestArea: initialEvent.interestArea || ['web_development'],
+        startDateTime: formatInputDate(initialEvent.startDateTime),
+        endDateTime: formatInputDate(initialEvent.endDateTime),
+        venueName: initialEvent.venueName || '',
+        venueAddress: initialEvent.venueAddress || '',
+        latitude: initialEvent.latitude !== null && initialEvent.latitude !== undefined ? String(initialEvent.latitude) : '',
+        longitude: initialEvent.longitude !== null && initialEvent.longitude !== undefined ? String(initialEvent.longitude) : '',
+        organizer: initialEvent.organizer || 'Dept. of Computer Science & Engineering',
+        eligibility: initialEvent.eligibility || '',
+        registrationRequired: initialEvent.registrationRequired ?? true,
         registrationUrl: initialEvent.registrationUrl || '',
-        image: initialEvent.image || '',
-        status: initialEvent.status || 'published'
+        certificateAvailable: initialEvent.certificateAvailable ?? true,
+        attendanceBenefit: initialEvent.attendanceBenefit || '',
+        activityPoints: initialEvent.activityPoints !== null && initialEvent.activityPoints !== undefined ? String(initialEvent.activityPoints) : '',
+        imageUrl: initialEvent.imageUrl || ''
       });
     } else {
       setFormData({
         title: '',
-        shortDescription: '',
         description: '',
-        category: 'Technology',
-        eventType: 'university',
-        interests: ['AI & Machine Learning'],
-        startDate: '2026-11-20T10:00',
-        endDate: '2026-11-20T17:00',
-        venue: '',
-        capacity: '100',
-        activityPoints: '10',
-        certificateAvailable: true,
+        category: 'technical_workshop',
+        eventType: 'internal',
+        interestArea: ['web_development'],
+        startDateTime: '2026-11-20T10:00',
+        endDateTime: '2026-11-20T17:00',
+        venueName: '',
+        venueAddress: '',
+        latitude: '12.9716',
+        longitude: '77.5946',
+        organizer: 'Dept. of Computer Science & Engineering',
+        eligibility: 'Open to all enrolled students',
+        registrationRequired: true,
         registrationUrl: 'https://campus-pulse.edu/register/',
-        image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1000&q=80',
-        status: 'published'
+        certificateAvailable: true,
+        attendanceBenefit: '',
+        activityPoints: '10',
+        imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1000&q=80'
       });
     }
     setErrors({});
@@ -78,25 +103,22 @@ export function EventFormModal({
   const validate = () => {
     const errs = {};
     if (!formData.title.trim()) errs.title = 'Event title is required';
-    if (!formData.shortDescription.trim()) errs.shortDescription = 'Brief summary is required';
-    if (!formData.venue.trim()) errs.venue = 'Venue location is required';
-    if (!formData.startDate) errs.startDate = 'Start date/time is required';
-    if (!formData.endDate) errs.endDate = 'End date/time is required';
-    if (formData.startDate && formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
-      errs.endDate = 'End date must be after the start date';
-    }
-    if (formData.capacity && Number(formData.capacity) <= 0) {
-      errs.capacity = 'Capacity must be a positive number';
+    if (!formData.description.trim()) errs.description = 'Event description is required';
+    if (!formData.venueName.trim()) errs.venueName = 'Venue name is required';
+    if (!formData.startDateTime) errs.startDateTime = 'Start date/time is required';
+    if (!formData.endDateTime) errs.endDateTime = 'End date/time is required';
+    if (formData.startDateTime && formData.endDateTime && new Date(formData.endDateTime) <= new Date(formData.startDateTime)) {
+      errs.endDateTime = 'End date/time must be strictly after the start date/time';
     }
     return errs;
   };
 
-  const handleInterestToggle = (tag) => {
+  const handleInterestToggle = (areaKey) => {
     setFormData(prev => {
-      const exists = prev.interests.includes(tag);
+      const exists = prev.interestArea.includes(areaKey);
       return {
         ...prev,
-        interests: exists ? prev.interests.filter(t => t !== tag) : [...prev.interests, tag]
+        interestArea: exists ? prev.interestArea.filter(t => t !== areaKey) : [...prev.interestArea, areaKey]
       };
     });
   };
@@ -111,14 +133,32 @@ export function EventFormModal({
 
     setIsSubmitting(true);
     try {
-      await onSubmit({
-        ...formData,
-        capacity: formData.capacity ? Number(formData.capacity) : 100,
-        activityPoints: formData.activityPoints !== '' ? Number(formData.activityPoints) : undefined
-      });
+      const normalizedPayload = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        eventType: formData.eventType,
+        interestArea: formData.interestArea.length > 0 ? formData.interestArea : ['other'],
+        startDateTime: new Date(formData.startDateTime),
+        endDateTime: new Date(formData.endDateTime),
+        venueName: formData.venueName.trim(),
+        venueAddress: formData.venueAddress.trim() || null,
+        latitude: formData.latitude !== '' ? Number(formData.latitude) : null,
+        longitude: formData.longitude !== '' ? Number(formData.longitude) : null,
+        organizer: formData.organizer.trim(),
+        eligibility: formData.eligibility.trim() || null,
+        registrationRequired: Boolean(formData.registrationRequired),
+        registrationUrl: formData.registrationUrl.trim() || null,
+        certificateAvailable: formData.certificateAvailable ?? null,
+        attendanceBenefit: formData.attendanceBenefit.trim() || null,
+        activityPoints: formData.activityPoints !== '' ? Number(formData.activityPoints) : null,
+        imageUrl: formData.imageUrl.trim() || null
+      };
+
+      await onSubmit(normalizedPayload);
       onClose();
     } catch (err) {
-      setErrors({ form: err.message || 'Failed to save event' });
+      setErrors({ form: err.message || 'Failed to save event draft' });
     } finally {
       setIsSubmitting(false);
     }
@@ -134,10 +174,10 @@ export function EventFormModal({
         <div className="cp-form-modal-header">
           <div>
             <h2 className="cp-form-title">
-              {isEditing ? 'Edit Event Details' : 'Create New Campus Event'}
+              {isEditing ? 'Edit Draft Event' : 'Create New Event Draft'}
             </h2>
             <p className="cp-form-subtitle">
-              Configure event parameters, scheduling, venue coordinates, and registration links.
+              Configure event parameters. Per Contract V1, organizers save listings as drafts pending admin verification.
             </p>
           </div>
           <button className="cp-form-close-btn" onClick={onClose} aria-label="Close">
@@ -159,7 +199,7 @@ export function EventFormModal({
             <input
               type="text"
               className={`cp-form-input ${errors.title ? 'error' : ''}`}
-              placeholder="e.g. Annual Autonomous Systems Robotics Hackathon 2026"
+              placeholder="e.g. Autonomous Agents & Machine Intelligence Symposium"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             />
@@ -168,92 +208,96 @@ export function EventFormModal({
 
           {/* Category and Event Type */}
           <div className="cp-form-row">
-            <div className="cp-form-group">
-              <label className="cp-form-label">Primary Category *</label>
+            <div className="cp-form-group cp-flex-1">
+              <label className="cp-form-label">Approved Category *</label>
               <select
                 className="cp-form-select"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               >
-                {CATEGORIES.filter(c => c !== 'All').map(c => (
-                  <option key={c} value={c}>{c}</option>
+                {APPROVED_CATEGORIES.map(catKey => (
+                  <option key={catKey} value={catKey}>
+                    {CATEGORY_LABELS[catKey]}
+                  </option>
                 ))}
               </select>
             </div>
 
-            <div className="cp-form-group">
-              <label className="cp-form-label">Hosting Jurisdiction *</label>
+            <div className="cp-form-group cp-flex-1">
+              <label className="cp-form-label">Event Type *</label>
               <select
                 className="cp-form-select"
                 value={formData.eventType}
                 onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
               >
-                <option value="university">🏛️ University Event</option>
+                <option value="internal">🏛️ Campus Internal Event</option>
                 <option value="external">🌐 External / Inter-Collegiate</option>
               </select>
             </div>
-
-            <div className="cp-form-group">
-              <label className="cp-form-label">Publish Status *</label>
-              <select
-                className="cp-form-select"
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              >
-                <option value="published">Published</option>
-                <option value="draft">Draft (Private)</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
           </div>
 
-          {/* Short Description */}
+          {/* Description */}
           <div className="cp-form-group">
-            <label className="cp-form-label">Short Summary (Preview Card) *</label>
-            <input
-              type="text"
-              className={`cp-form-input ${errors.shortDescription ? 'error' : ''}`}
-              placeholder="A punchy one-sentence summary for the event listing..."
-              value={formData.shortDescription}
-              onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
-            />
-            {errors.shortDescription && <span className="cp-input-error">{errors.shortDescription}</span>}
-          </div>
-
-          {/* Full Description */}
-          <div className="cp-form-group">
-            <label className="cp-form-label">Full Description & Agenda</label>
+            <label className="cp-form-label">Event Description *</label>
             <textarea
-              className="cp-form-textarea"
+              className={`cp-form-textarea ${errors.description ? 'error' : ''}`}
               rows={4}
-              placeholder="Detailed description, eligibility guidelines, deliverables, schedule, speaker bios..."
+              placeholder="Provide a comprehensive description of the event agenda, speakers, objectives, and prerequisites..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
+            {errors.description && <span className="cp-input-error">{errors.description}</span>}
           </div>
 
-          {/* Venue & Capacity */}
+          {/* Venue Name & Address */}
           <div className="cp-form-row">
-            <div className="cp-form-group cp-flex-2">
-              <label className="cp-form-label">Campus Venue / Location *</label>
+            <div className="cp-form-group cp-flex-1">
+              <label className="cp-form-label">Venue Name *</label>
               <input
                 type="text"
-                className={`cp-form-input ${errors.venue ? 'error' : ''}`}
-                placeholder="e.g. Main Auditorium, Vikram Sarabhai Hall"
-                value={formData.venue}
-                onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                className={`cp-form-input ${errors.venueName ? 'error' : ''}`}
+                placeholder="e.g. Vikram Sarabhai Main Auditorium"
+                value={formData.venueName}
+                onChange={(e) => setFormData({ ...formData, venueName: e.target.value })}
               />
-              {errors.venue && <span className="cp-input-error">{errors.venue}</span>}
+              {errors.venueName && <span className="cp-input-error">{errors.venueName}</span>}
             </div>
 
             <div className="cp-form-group cp-flex-1">
-              <label className="cp-form-label">Seating Capacity</label>
+              <label className="cp-form-label">Venue Address (Optional)</label>
+              <input
+                type="text"
+                className="cp-form-input"
+                placeholder="e.g. Central Academic Block, University Campus"
+                value={formData.venueAddress}
+                onChange={(e) => setFormData({ ...formData, venueAddress: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* GPS Coordinates (Optional numeric) */}
+          <div className="cp-form-row">
+            <div className="cp-form-group cp-flex-1">
+              <label className="cp-form-label">Latitude (Optional numeric)</label>
               <input
                 type="number"
+                step="any"
                 className="cp-form-input"
-                placeholder="e.g. 250"
-                value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                placeholder="e.g. 12.9716"
+                value={formData.latitude}
+                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+              />
+            </div>
+
+            <div className="cp-form-group cp-flex-1">
+              <label className="cp-form-label">Longitude (Optional numeric)</label>
+              <input
+                type="number"
+                step="any"
+                className="cp-form-input"
+                placeholder="e.g. 77.5946"
+                value={formData.longitude}
+                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
               />
             </div>
           </div>
@@ -264,54 +308,78 @@ export function EventFormModal({
               <label className="cp-form-label">Start Date & Time *</label>
               <input
                 type="datetime-local"
-                className={`cp-form-input ${errors.startDate ? 'error' : ''}`}
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                className={`cp-form-input ${errors.startDateTime ? 'error' : ''}`}
+                value={formData.startDateTime}
+                onChange={(e) => setFormData({ ...formData, startDateTime: e.target.value })}
               />
-              {errors.startDate && <span className="cp-input-error">{errors.startDate}</span>}
+              {errors.startDateTime && <span className="cp-input-error">{errors.startDateTime}</span>}
             </div>
 
             <div className="cp-form-group">
               <label className="cp-form-label">End Date & Time *</label>
               <input
                 type="datetime-local"
-                className={`cp-form-input ${errors.endDate ? 'error' : ''}`}
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                className={`cp-form-input ${errors.endDateTime ? 'error' : ''}`}
+                value={formData.endDateTime}
+                onChange={(e) => setFormData({ ...formData, endDateTime: e.target.value })}
               />
-              {errors.endDate && <span className="cp-input-error">{errors.endDate}</span>}
+              {errors.endDateTime && <span className="cp-input-error">{errors.endDateTime}</span>}
             </div>
           </div>
 
           {/* Academic Points & Certificate */}
           <div className="cp-form-row">
-            <div className="cp-form-group">
-              <label className="cp-form-label">University Activity Points</label>
+            <div className="cp-form-group cp-flex-1">
+              <label className="cp-form-label">Requested Activity Points</label>
               <input
                 type="number"
                 className="cp-form-input"
-                placeholder="e.g. 15 (leave blank if none)"
+                placeholder="e.g. 15 (leave blank if null)"
                 value={formData.activityPoints}
                 onChange={(e) => setFormData({ ...formData, activityPoints: e.target.value })}
               />
             </div>
 
-            <div className="cp-form-group cp-checkbox-group">
+            <div className="cp-form-group cp-checkbox-group cp-flex-1">
               <label className="cp-checkbox-label">
                 <input
                   type="checkbox"
                   checked={formData.certificateAvailable}
                   onChange={(e) => setFormData({ ...formData, certificateAvailable: e.target.checked })}
                 />
-                <span>Participation Certificate Provided</span>
+                <span>Certificate Available</span>
               </label>
             </div>
           </div>
 
-          {/* Registration URL & Image */}
+          {/* Attendance Benefits */}
+          <div className="cp-form-group">
+            <label className="cp-form-label">Designated Attendance Benefit (Optional)</label>
+            <input
+              type="text"
+              className="cp-form-input"
+              placeholder="e.g. Academic attendance credit, workshop kit, food coupons..."
+              value={formData.attendanceBenefit}
+              onChange={(e) => setFormData({ ...formData, attendanceBenefit: e.target.value })}
+            />
+          </div>
+
+          {/* Registration Required & Official URL */}
           <div className="cp-form-row">
             <div className="cp-form-group cp-flex-1">
-              <label className="cp-form-label">Official Registration Link</label>
+              <label className="cp-form-label">Registration Requirement</label>
+              <select
+                className="cp-form-select"
+                value={formData.registrationRequired ? 'true' : 'false'}
+                onChange={(e) => setFormData({ ...formData, registrationRequired: e.target.value === 'true' })}
+              >
+                <option value="true">Registration Required</option>
+                <option value="false">Open Entry / Walk-in</option>
+              </select>
+            </div>
+
+            <div className="cp-form-group cp-flex-2">
+              <label className="cp-form-label">Official Registration Portal URL</label>
               <input
                 type="url"
                 className="cp-form-input"
@@ -320,33 +388,47 @@ export function EventFormModal({
                 onChange={(e) => setFormData({ ...formData, registrationUrl: e.target.value })}
               />
             </div>
+          </div>
 
+          {/* Image URL & Eligibility */}
+          <div className="cp-form-row">
             <div className="cp-form-group cp-flex-1">
-              <label className="cp-form-label">Event Banner Image URL</label>
+              <label className="cp-form-label">Banner Image URL</label>
               <input
                 type="url"
                 className="cp-form-input"
                 placeholder="https://images.unsplash.com/..."
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              />
+            </div>
+
+            <div className="cp-form-group cp-flex-1">
+              <label className="cp-form-label">Eligibility Criteria</label>
+              <input
+                type="text"
+                className="cp-form-input"
+                placeholder="e.g. Open to all engineering students"
+                value={formData.eligibility}
+                onChange={(e) => setFormData({ ...formData, eligibility: e.target.value })}
               />
             </div>
           </div>
 
-          {/* Interest Areas Selector */}
+          {/* Approved Interest Areas Selector */}
           <div className="cp-form-group">
-            <label className="cp-form-label">Relevant Topic Tags</label>
+            <label className="cp-form-label">Approved Interest Areas (Contract Enums)</label>
             <div className="cp-tag-checkbox-wrap">
-              {INTEREST_TAGS.map(tag => {
-                const checked = formData.interests.includes(tag);
+              {APPROVED_INTEREST_AREAS.map(areaKey => {
+                const checked = formData.interestArea.includes(areaKey);
                 return (
                   <button
                     type="button"
-                    key={tag}
+                    key={areaKey}
                     className={`cp-tag-toggle-btn ${checked ? 'active' : ''}`}
-                    onClick={() => handleInterestToggle(tag)}
+                    onClick={() => handleInterestToggle(areaKey)}
                   >
-                    {tag}
+                    {INTEREST_AREA_LABELS[areaKey]}
                   </button>
                 );
               })}
@@ -356,7 +438,10 @@ export function EventFormModal({
           {/* Form Footer */}
           <div className="cp-form-footer">
             <div className="cp-form-notice">
-              ⚠️ Note: Event changes are stored in client mock state. Production write operations will connect to Hammad's Cloud Firestore backend.
+              <Info size={14} />
+              <span>
+                <strong>Contract V1 Organizer Scope:</strong> Submitted events are saved as <code>draft</code> with <code>unverified</code> benefits. Only administrators can publish events and verify university points.
+              </span>
             </div>
 
             <div className="cp-form-actions">
@@ -374,7 +459,7 @@ export function EventFormModal({
                 disabled={isSubmitting}
               >
                 <Save size={16} />
-                <span>{isSubmitting ? 'Saving...' : isEditing ? 'Update Event' : 'Save Event'}</span>
+                <span>{isSubmitting ? 'Saving...' : isEditing ? 'Update Draft' : 'Save as Draft'}</span>
               </button>
             </div>
           </div>

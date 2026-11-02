@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEvents } from '../../context/EventContext';
-import { CategoryBadge, EventTypeBadge, Badge } from '../common/Badge';
+import { CategoryBadge, EventTypeBadge } from '../common/Badge';
 import { 
   Calendar, 
   MapPin, 
@@ -8,7 +8,8 @@ import {
   Bookmark, 
   ArrowRight, 
   Award,
-  Clock
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 import './EventCard.css';
 
@@ -24,10 +25,12 @@ export function EventCard({ event, isSelected = false, onSelect }) {
 
   const isSaved = savedEventIds.includes(event.id);
 
-  // Format date and time
-  const formatDateTime = (isoString) => {
-    if (!isoString) return '';
-    const date = new Date(isoString);
+  // Format date and time from Date object
+  const formatDateTime = (dateObj) => {
+    if (!dateObj) return { date: '', time: '' };
+    const date = dateObj instanceof Date ? dateObj : new Date(dateObj);
+    if (isNaN(date.getTime())) return { date: '', time: '' };
+
     const dateFormatted = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -41,10 +44,9 @@ export function EventCard({ event, isSelected = false, onSelect }) {
     return { date: dateFormatted, time: timeFormatted };
   };
 
-  const { date: startDateStr, time: startTimeStr } = formatDateTime(event.startDate);
+  const { date: startDateStr, time: startTimeStr } = formatDateTime(event.startDateTime);
 
   const handleCardClick = (e) => {
-    // If clicking bookmark button, don't trigger card selection/details
     if (e.target.closest('.cp-card-bookmark-btn')) return;
 
     if (onSelect) {
@@ -64,6 +66,10 @@ export function EventCard({ event, isSelected = false, onSelect }) {
     handleToggleSave(event.id, event.title);
   };
 
+  const organizerName = typeof event.organizer === 'string' 
+    ? event.organizer 
+    : event.organizer?.name || 'Campus Entity';
+
   return (
     <div 
       className={`card cp-event-card ${isSelected ? 'selected' : ''}`}
@@ -75,7 +81,7 @@ export function EventCard({ event, isSelected = false, onSelect }) {
       {/* Thumbnail Banner */}
       <div className="cp-event-thumb-wrap">
         <img 
-          src={event.image} 
+          src={event.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1000&q=80"} 
           alt={event.title}
           className="cp-event-thumb"
           loading="lazy"
@@ -92,21 +98,21 @@ export function EventCard({ event, isSelected = false, onSelect }) {
           <EventTypeBadge type={event.eventType} size="xs" />
         </div>
 
-        {/* Bookmark Toggle */}
+        {/* Bookmark Toggle (Client-side only) */}
         <button
           className={`cp-card-bookmark-btn ${isSaved ? 'saved' : ''}`}
           onClick={handleBookmarkClick}
-          title={isSaved ? "Remove from saved events" : "Save this event"}
-          aria-label={isSaved ? "Remove from saved events" : "Save this event"}
+          title={isSaved ? "Remove from local bookmarks" : "Bookmark this event"}
+          aria-label={isSaved ? "Remove from local bookmarks" : "Bookmark this event"}
         >
           <Bookmark size={16} fill={isSaved ? "#6366F1" : "none"} />
         </button>
 
-        {/* Activity Points Chip if available */}
-        {event.activityPoints !== undefined && event.activityPoints > 0 && (
-          <div className="cp-event-pts-badge">
+        {/* Activity Points Tag (Strictly contract-backed, only if present) */}
+        {event.activityPoints !== null && event.activityPoints > 0 && (
+          <div className="cp-event-pts-badge" title="Official university activity points">
             <Award size={12} />
-            <span>+{event.activityPoints} Pts</span>
+            <span>+{event.activityPoints} Activity Pts</span>
           </div>
         )}
       </div>
@@ -131,16 +137,16 @@ export function EventCard({ event, isSelected = false, onSelect }) {
           {event.title}
         </h3>
 
-        {/* Short Description */}
+        {/* Description */}
         <p className="cp-event-description">
-          {event.shortDescription || event.description}
+          {event.description}
         </p>
 
         {/* Venue Location */}
         <div className="cp-event-venue-row">
           <MapPin size={14} className="cp-venue-icon" />
-          <span className="cp-venue-text" title={event.venue}>
-            {event.venue}
+          <span className="cp-venue-text" title={event.venueName}>
+            {event.venueName}
           </span>
         </div>
 
@@ -148,22 +154,20 @@ export function EventCard({ event, isSelected = false, onSelect }) {
         <div className="cp-event-organizer-row">
           <UserCheck size={14} className="cp-organizer-icon" />
           <span className="cp-organizer-name">
-            {event.organizer?.name || 'Campus Organizer'}
+            {organizerName}
           </span>
-          {event.organizer?.isVerified && (
-            <span className="cp-verified-check" title="Verified Campus Entity">✓</span>
+          {event.benefitsVerificationStatus === 'verified' && (
+            <span className="cp-verified-check" title="Benefits Verified by Academic Authority">✓</span>
           )}
         </div>
 
-        {/* Card Footer Actions */}
+        {/* Card Footer Actions (No fake capacity counters per Section 7) */}
         <div className="cp-event-card-footer">
-          <div className="cp-capacity-indicator">
-            {event.capacity ? (
-              <span className="cp-capacity-text">
-                <strong>{event.registeredCount || 0}</strong> / {event.capacity} registered
-              </span>
+          <div className="cp-registration-status-hint">
+            {event.registrationRequired ? (
+              <span className="cp-reg-tag required">Registration Required</span>
             ) : (
-              <span className="cp-capacity-text">Open seating</span>
+              <span className="cp-reg-tag open">Open Entry</span>
             )}
           </div>
           <button 

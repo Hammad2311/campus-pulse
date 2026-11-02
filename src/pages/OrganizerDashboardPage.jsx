@@ -1,43 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../context/EventContext';
 import { 
-  fetchEvents, 
-  createEventMock, 
-  updateEventMock, 
-  updateEventStatusMock 
-} from '../services/eventService';
+  getEvents, 
+  createEventDraft, 
+  updateEventDraft, 
+  cancelEvent 
+} from '../services/mockEventService';
 import { EventFormModal } from '../components/dashboard/EventFormModal';
-import { Badge, CategoryBadge } from '../components/common/Badge';
+import { Badge, CategoryBadge, VerificationBadge } from '../components/common/Badge';
 import { 
   LayoutDashboard, 
   Plus, 
   Edit3, 
-  Trash2, 
+  Ban, 
   Eye, 
-  Users, 
   Calendar, 
-  CheckCircle2, 
-  AlertCircle, 
   Sparkles, 
-  Layers, 
-  Filter,
-  ArrowUpRight,
-  RefreshCw,
-  Search
+  Info,
+  Search,
+  Lock
 } from 'lucide-react';
 import './OrganizerDashboardPage.css';
 
 export function OrganizerDashboardPage() {
   const { 
     organizerUser, 
-    navigateTo, 
     openEventDetails, 
     showToast 
   } = useEvents();
 
+  const currentOrgId = organizerUser?.id || 'org-cs-dept';
+
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'published' | 'draft' | 'cancelled'
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'draft' | 'published' | 'cancelled'
   const [searchQuery, setSearchQuery] = useState('');
 
   // Form Modal State
@@ -47,11 +43,14 @@ export function OrganizerDashboardPage() {
   const loadDashboardEvents = async () => {
     setLoading(true);
     try {
-      const data = await fetchEvents({
+      // List OWN events per Section 6
+      const { data, error } = await getEvents({
         status: 'all',
-        includeDrafts: true
+        organizerId: currentOrgId
       });
-      setEvents(data);
+      if (!error && data) {
+        setEvents(data);
+      }
     } catch (err) {
       console.error('Failed to load organizer events', err);
     } finally {
@@ -61,7 +60,7 @@ export function OrganizerDashboardPage() {
 
   useEffect(() => {
     loadDashboardEvents();
-  }, []);
+  }, [currentOrgId]);
 
   const handleCreateNew = () => {
     setEditingEvent(null);
@@ -69,36 +68,51 @@ export function OrganizerDashboardPage() {
   };
 
   const handleEdit = (event) => {
+    if (event.status !== 'draft') {
+      showToast('Only draft events can be edited by organizers. Published events are managed by administrators.', 'warning');
+      return;
+    }
     setEditingEvent(event);
     setIsModalOpen(true);
   };
 
   const handleFormSubmit = async (formData) => {
     if (editingEvent) {
-      const updated = await updateEventMock(editingEvent.id, formData);
-      showToast(`Updated "${formData.title}" (Mock State)`, 'success');
+      const { data, error } = await updateEventDraft(editingEvent.id, formData, currentOrgId);
+      if (error) {
+        showToast(error, 'warning');
+      } else {
+        showToast(`Draft updated: "${formData.title}"`, 'success');
+      }
     } else {
-      const created = await createEventMock(formData);
-      showToast(`Created new event "${formData.title}" (Mock State)`, 'success');
+      const { data, error } = await createEventDraft(formData, currentOrgId);
+      if (error) {
+        showToast(error, 'warning');
+      } else {
+        showToast(`Created draft: "${formData.title}"`, 'success');
+      }
     }
     await loadDashboardEvents();
   };
 
-  const handleStatusChange = async (eventId, newStatus) => {
-    await updateEventStatusMock(eventId, newStatus);
-    showToast(`Status changed to ${newStatus}`, 'info');
-    await loadDashboardEvents();
+  const handleCancel = async (eventId, title) => {
+    const confirmCancel = window.confirm(`Are you sure you want to cancel "${title}"?`);
+    if (!confirmCancel) return;
+
+    const { data, error } = await cancelEvent(eventId, currentOrgId);
+    if (error) {
+      showToast(error, 'warning');
+    } else {
+      showToast(`Event cancelled: "${title}"`, 'info');
+      await loadDashboardEvents();
+    }
   };
 
-  // Metrics calculation
+  // Metrics for own events
   const totalEvents = events.length;
-  const publishedEvents = events.filter(e => e.status === 'published');
   const draftEvents = events.filter(e => e.status === 'draft');
+  const publishedEvents = events.filter(e => e.status === 'published');
   const cancelledEvents = events.filter(e => e.status === 'cancelled');
-
-  const totalRegistrations = events.reduce((sum, e) => sum + (e.registeredCount || 0), 0);
-  const totalCapacity = events.reduce((sum, e) => sum + (e.capacity || 0), 0);
-  const avgOccupancy = totalCapacity > 0 ? Math.round((totalRegistrations / totalCapacity) * 100) : 0;
 
   // Filtered list
   const filteredEvents = events.filter(e => {
@@ -106,7 +120,7 @@ export function OrganizerDashboardPage() {
     const query = searchQuery.trim().toLowerCase();
     const matchesSearch = !query || 
       e.title.toLowerCase().includes(query) ||
-      e.venue.toLowerCase().includes(query) ||
+      (e.venueName && e.venueName.toLowerCase().includes(query)) ||
       e.category.toLowerCase().includes(query);
     return matchesStatus && matchesSearch;
   });
@@ -119,11 +133,11 @@ export function OrganizerDashboardPage() {
           <div>
             <div className="cp-page-tag">
               <LayoutDashboard size={15} />
-              <span>Host & Club Admin Center</span>
+              <span>Organizer Workspace (V1 Scope)</span>
             </div>
-            <h1 className="cp-dashboard-title">Organizer Workspace</h1>
+            <h1 className="cp-dashboard-title">Organizer Event Management</h1>
             <p className="cp-dashboard-subtitle">
-              Manage university-hosted conferences, review registrations, and draft upcoming callouts.
+              Draft event listings, manage your organization's proposals, and track publication status.
             </p>
           </div>
 
@@ -133,51 +147,51 @@ export function OrganizerDashboardPage() {
               onClick={handleCreateNew}
             >
               <Plus size={18} />
-              <span>Create Event</span>
+              <span>Create Event Draft</span>
             </button>
           </div>
         </div>
 
-        {/* Firebase Backend Integration Status Banner */}
+        {/* Scope Notice */}
         <div className="cp-dashboard-alert">
-          <Sparkles size={18} className="cp-alert-sparkle" />
+          <Info size={18} className="cp-alert-sparkle" />
           <div className="cp-alert-body">
-            <strong>Frontend Simulation Notice:</strong> You are currently viewing the frontend prototype with localized client state. Full persistence, Firestore security rules enforcement, and role-based ACLs will be connected through Hammad Qubah's Cloud Firestore service.
+            <strong>Technical Contract V1 Scope:</strong> Organizers can create and edit their own draft events, or cancel existing events. Publishing events and verifying academic activity points are restricted to system administrators.
           </div>
         </div>
 
-        {/* Overview Metric Cards */}
+        {/* Overview Metric Cards (Strictly own events, no fake student registration counters) */}
         <div className="cp-metrics-grid">
           <div className="card cp-metric-card">
             <div className="cp-metric-icon bg-indigo">
               <Calendar size={22} />
             </div>
             <div className="cp-metric-info">
-              <span className="cp-metric-label">Managed Events</span>
+              <span className="cp-metric-label">Organization Events</span>
               <span className="cp-metric-number">{totalEvents}</span>
-              <span className="cp-metric-sub">{publishedEvents.length} live • {draftEvents.length} drafts</span>
+              <span className="cp-metric-sub">Hosted by {organizerUser?.name || 'Dept. of CSE'}</span>
+            </div>
+          </div>
+
+          <div className="card cp-metric-card">
+            <div className="cp-metric-icon bg-amber">
+              <Edit3 size={22} />
+            </div>
+            <div className="cp-metric-info">
+              <span className="cp-metric-label">Active Drafts</span>
+              <span className="cp-metric-number">{draftEvents.length}</span>
+              <span className="cp-metric-sub">Editable by your team</span>
             </div>
           </div>
 
           <div className="card cp-metric-card">
             <div className="cp-metric-icon bg-emerald">
-              <Users size={22} />
+              <Sparkles size={22} />
             </div>
             <div className="cp-metric-info">
-              <span className="cp-metric-label">Total Student Bookings</span>
-              <span className="cp-metric-number">{totalRegistrations}</span>
-              <span className="cp-metric-sub">Across all campus listings</span>
-            </div>
-          </div>
-
-          <div className="card cp-metric-card">
-            <div className="cp-metric-icon bg-blue">
-              <ArrowUpRight size={22} />
-            </div>
-            <div className="cp-metric-info">
-              <span className="cp-metric-label">Capacity Utilization</span>
-              <span className="cp-metric-number">{avgOccupancy}%</span>
-              <span className="cp-metric-sub">{totalCapacity} total seat capacity</span>
+              <span className="cp-metric-label">Published (Live)</span>
+              <span className="cp-metric-number">{publishedEvents.length}</span>
+              <span className="cp-metric-sub">Approved by campus administrators</span>
             </div>
           </div>
         </div>
@@ -186,7 +200,7 @@ export function OrganizerDashboardPage() {
         <div className="card cp-mgmt-card">
           <div className="cp-mgmt-toolbar">
             <div className="cp-mgmt-title-group">
-              <h3 className="cp-mgmt-title">All Event Listings</h3>
+              <h3 className="cp-mgmt-title">My Organization's Events</h3>
               <span className="cp-mgmt-count">{filteredEvents.length} records</span>
             </div>
 
@@ -210,16 +224,16 @@ export function OrganizerDashboardPage() {
                   All ({totalEvents})
                 </button>
                 <button
-                  className={`cp-status-tab-btn ${statusFilter === 'published' ? 'active' : ''}`}
-                  onClick={() => setStatusFilter('published')}
-                >
-                  Published ({publishedEvents.length})
-                </button>
-                <button
                   className={`cp-status-tab-btn ${statusFilter === 'draft' ? 'active' : ''}`}
                   onClick={() => setStatusFilter('draft')}
                 >
                   Drafts ({draftEvents.length})
+                </button>
+                <button
+                  className={`cp-status-tab-btn ${statusFilter === 'published' ? 'active' : ''}`}
+                  onClick={() => setStatusFilter('published')}
+                >
+                  Published ({publishedEvents.length})
                 </button>
                 <button
                   className={`cp-status-tab-btn ${statusFilter === 'cancelled' ? 'active' : ''}`}
@@ -236,12 +250,12 @@ export function OrganizerDashboardPage() {
             <table className="cp-dashboard-table">
               <thead>
                 <tr>
-                  <th>Event Name & Details</th>
+                  <th>Event Name</th>
                   <th>Category</th>
-                  <th>Date & Time</th>
+                  <th>Start Date</th>
                   <th>Venue</th>
-                  <th>Registration Status</th>
-                  <th>Publish Status</th>
+                  <th>Benefits Verification</th>
+                  <th>Status</th>
                   <th className="text-right">Actions</th>
                 </tr>
               </thead>
@@ -253,78 +267,87 @@ export function OrganizerDashboardPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredEvents.map(evt => (
-                    <tr key={evt.id}>
-                      <td className="cp-table-title-cell">
-                        <div className="cp-table-title">{evt.title}</div>
-                        <div className="cp-table-type">
-                          {evt.eventType === 'university' ? '🏛️ Campus Event' : '🌐 External Event'}
-                        </div>
-                      </td>
-                      <td>
-                        <CategoryBadge category={evt.category} size="xs" />
-                      </td>
-                      <td className="cp-table-date-cell">
-                        <div>{new Date(evt.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                        <div className="cp-table-time">
-                          {new Date(evt.startDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                        </div>
-                      </td>
-                      <td className="cp-table-venue-cell" title={evt.venue}>
-                        {evt.venue}
-                      </td>
-                      <td>
-                        <div className="cp-table-reg-progress">
-                          <span><strong>{evt.registeredCount || 0}</strong> / {evt.capacity || 'Open'}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`cp-badge cp-badge-${evt.status} cp-badge-xs`}>
-                          {evt.status.charAt(0).toUpperCase() + evt.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="cp-table-actions-cell text-right">
-                        <button
-                          className="cp-action-btn view"
-                          onClick={() => openEventDetails(evt)}
-                          title="View public event preview"
-                        >
-                          <Eye size={15} />
-                        </button>
-                        <button
-                          className="cp-action-btn edit"
-                          onClick={() => handleEdit(evt)}
-                          title="Edit event details"
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                        {evt.status !== 'cancelled' ? (
+                  filteredEvents.map(evt => {
+                    const isDraft = evt.status === 'draft';
+                    const isCancelled = evt.status === 'cancelled';
+                    const startDateStr = evt.startDateTime instanceof Date 
+                      ? evt.startDateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : '';
+
+                    return (
+                      <tr key={evt.id}>
+                        <td className="cp-table-title-cell">
+                          <div className="cp-table-title">{evt.title}</div>
+                          <div className="cp-table-type">
+                            {evt.eventType === 'internal' ? '🏛️ Campus Internal' : '🌐 External Event'}
+                          </div>
+                        </td>
+                        <td>
+                          <CategoryBadge category={evt.category} size="xs" />
+                        </td>
+                        <td className="cp-table-date-cell">
+                          <div>{startDateStr}</div>
+                        </td>
+                        <td className="cp-table-venue-cell" title={evt.venueName}>
+                          {evt.venueName}
+                        </td>
+                        <td>
+                          <VerificationBadge status={evt.benefitsVerificationStatus} size="xs" />
+                        </td>
+                        <td>
+                          <span className={`cp-badge cp-badge-${evt.status} cp-badge-xs`}>
+                            {evt.status.charAt(0).toUpperCase() + evt.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="cp-table-actions-cell text-right">
                           <button
-                            className="cp-action-btn cancel"
-                            onClick={() => handleStatusChange(evt.id, 'cancelled')}
-                            title="Mark as Cancelled"
+                            className="cp-action-btn view"
+                            onClick={() => openEventDetails(evt)}
+                            title="Preview event details"
                           >
-                            <Trash2 size={15} />
+                            <Eye size={15} />
                           </button>
-                        ) : (
-                          <button
-                            className="cp-action-btn restore"
-                            onClick={() => handleStatusChange(evt.id, 'published')}
-                            title="Re-publish event"
-                          >
-                            <RefreshCw size={15} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                          
+                          {/* Only Draft events can be edited per Section 6 */}
+                          {isDraft ? (
+                            <button
+                              className="cp-action-btn edit"
+                              onClick={() => handleEdit(evt)}
+                              title="Edit draft event"
+                            >
+                              <Edit3 size={15} />
+                            </button>
+                          ) : (
+                            <button
+                              className="cp-action-btn disabled"
+                              disabled
+                              title="Published and completed events can only be modified by administrators."
+                            >
+                              <Lock size={15} />
+                            </button>
+                          )}
+
+                          {/* Organizers can cancel their own events */}
+                          {!isCancelled && (
+                            <button
+                              className="cp-action-btn cancel"
+                              onClick={() => handleCancel(evt.id, evt.title)}
+                              title="Cancel event"
+                            >
+                              <Ban size={15} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Modal for Create / Edit */}
+        {/* Modal for Create / Edit (Drafts only) */}
         <EventFormModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
